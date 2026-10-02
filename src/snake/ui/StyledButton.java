@@ -16,8 +16,8 @@ final class StyledButton extends JButton {
         this.primaryColor = primaryColor;
         this.secondaryColor = secondaryColor;
 
-        setPreferredSize(new Dimension(350, 50));
-        setMaximumSize(new Dimension(350, 50));
+        setPreferredSize(new Dimension(440, 50));
+        setMaximumSize(new Dimension(440, 50));
         setAlignmentX(Component.CENTER_ALIGNMENT);
         setBorderPainted(false);
         setContentAreaFilled(false);
@@ -51,10 +51,15 @@ final class StyledButton extends JButton {
         g2d.setStroke(new BasicStroke(3));
         g2d.drawRoundRect(2, 2, getWidth() - 4, getHeight() - 4, 20, 20);
 
-        // Text shadow
+        // Text shadow. The font shrinks if the label would not fit, since Arial's stand-in on
+        // some systems is wider.
         String text = getText();
         g2d.setColor(new Color(0, 0, 0, 100));
-        g2d.setFont(new Font("Arial", Font.BOLD, 18));
+        int fontSize = 18;
+        g2d.setFont(new Font("Arial", Font.BOLD, fontSize));
+        while (fontSize > 10 && g2d.getFontMetrics().stringWidth(text) > getWidth() - 24) {
+            g2d.setFont(new Font("Arial", Font.BOLD, --fontSize));
+        }
         FontMetrics fm = g2d.getFontMetrics();
         int textX = (getWidth() - fm.stringWidth(text)) / 2 + 2;
         int textY = (getHeight() + fm.getAscent()) / 2 + 2;
