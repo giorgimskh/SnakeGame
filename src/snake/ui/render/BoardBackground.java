@@ -9,16 +9,19 @@ import snake.model.Board;
 
 /**
  * Builds a level's static board image: a flat two-tone checkerboard, one tile per grid cell, with
- * the biome's decorations on top. It is rendered once per level and drawn every frame.
+ * the biome's decorations on top. It is rendered once per level and board size, and drawn every frame.
  */
 public final class BoardBackground {
     private BoardBackground() {
     }
 
+    /** Renders the board {@code scale} times its 600×600 size, so a bigger window stays sharp. */
     public static BufferedImage create(Color tileA, Color tileB, Decorations.Decorator decorations,
-                                       Decorations.CellPicker cells) {
-        BufferedImage image = new BufferedImage(Board.WIDTH, Board.HEIGHT, BufferedImage.TYPE_INT_RGB);
+                                       Decorations.CellPicker cells, double scale) {
+        BufferedImage image = new BufferedImage(scaled(Board.WIDTH, scale), scaled(Board.HEIGHT, scale),
+                BufferedImage.TYPE_INT_RGB);
         Graphics2D g = image.createGraphics();
+        g.scale(scale, scale);
         for (int c = 0; c < Board.COLUMNS; c++) {
             for (int r = 0; r < Board.ROWS; r++) {
                 g.setColor((c + r) % 2 == 0 ? tileA : tileB);
@@ -31,5 +34,10 @@ public final class BoardBackground {
         decorations.paint(g, cells);
         g.dispose();
         return image;
+    }
+
+    /** A board length in pixels at {@code scale}, rounded the same way for the image and its placement. */
+    public static int scaled(int length, double scale) {
+        return Math.max(1, (int) Math.round(length * scale));
     }
 }

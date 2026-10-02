@@ -3,34 +3,42 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Snake Game (CheerpJ)</title>
+    <title>Snake Game</title>
     <style>
-      html, body { height: 100%; margin: 0; background: #111; color: #ddd; font-family: Arial, sans-serif; }
-      header { text-align: center; padding: 12px; color: #9fd; }
-      #canvasContainer { display: flex; align-items: center; justify-content: center; height: calc(100% - 56px); }
-      .hint { text-align: center; font-size: 12px; opacity: 0.8; }
-      .loading { text-align: center; padding-top: 20px; color: #9fd; }
+      html, body { height: 100%; margin: 0; background: #f6efdc; color: #2f6b3a; font-family: Arial, sans-serif; }
+      #display { position: fixed; inset: 0; }
+      #status { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center;
+                justify-content: center; gap: 8px; pointer-events: none; }
+      #status h1 { margin: 0; font-size: 28px; }
+      #status p { margin: 0; color: #6f6a55; font-size: 14px; }
     </style>
   </head>
   <body>
-    <header>
-      <h3>Snake Game</h3>
-      <div class="hint">Running Java Swing in the browser via CheerpJ</div>
-    </header>
-    <div id="canvasContainer">
-      <div class="loading" id="loading">Loading Java runtime…</div>
+    <div id="display"></div>
+    <div id="status">
+      <h1>Snake Game</h1>
+      <p id="message">Loading the Java runtime… the first load can take a minute.</p>
     </div>
     <script src="https://cjrtnc.leaningtech.com/3.0/loader.js"></script>
     <script>
       (async () => {
-        await cheerpjInit();
-        // Create a display canvas for AWT/Swing; size will be set by the Java app window
-        cheerpjCreateDisplay();
-        document.getElementById('loading')?.remove();
-        // Run the main class from the JAR located in this folder
-        await cheerpjRunMain("App", "SnakeGame.jar");
+        const message = document.getElementById('message');
+        try {
+          await cheerpjInit({
+            // Saved files go to /files, which CheerpJ keeps in the browser between visits
+            javaProperties: ['snake.dataDir=/files'],
+          });
+          // -1 × -1 fills #display, so the window's maximize button can use the whole page
+          cheerpjCreateDisplay(-1, -1, document.getElementById('display'));
+          document.getElementById('status').remove();
+          // CheerpJ serves this site under /app, so build the jar's path from the page's own folder.
+          // That works both locally (/app/SnakeGame.jar) and on GitHub Pages (/app/SnakeGame/SnakeGame.jar).
+          const folder = location.pathname.replace(/[^/]*$/, '');
+          await cheerpjRunMain('App', '/app' + folder + 'SnakeGame.jar');
+        } catch (e) {
+          message.textContent = 'The game failed to start: ' + e;
+        }
       })();
     </script>
   </body>
-  </html>
-
+</html>

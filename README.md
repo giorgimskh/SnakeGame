@@ -71,8 +71,22 @@ The build also copies the jar to `docs/SnakeGame.jar`.
 
 ## Playing in the browser
 
-`docs/index.html` loads the CheerpJ runtime and runs the game from `docs/SnakeGame.jar`. To publish
-on GitHub Pages, run the jar build, commit `docs/SnakeGame.jar`, and serve the `docs/` folder.
+`docs/index.html` loads the CheerpJ runtime and runs the game from `docs/SnakeGame.jar`. In the
+browser, settings and the high score are saved in the browser's storage.
+
+**Publishing on GitHub Pages.** The workflow in `.github/workflows/pages.yml` builds the jar and
+deploys the `docs/` folder on every push to `main`, so the jar isn't committed. One-time setup: in the
+repository's **Settings → Pages → Build and deployment**, set **Source** to **GitHub Actions**. The
+game is then at `https://<user>.github.io/<repo>/`. You can also run the workflow by hand from the
+**Actions** tab.
+
+**Testing locally.** Build the jar, then serve `docs/` with any web server and open it (opening
+`index.html` as a file doesn't work):
+
+```bash
+bash build-jar.sh
+npx http-server docs -p 8080     # then open http://localhost:8080/
+```
 
 ## Sounds
 

@@ -16,3 +16,6 @@ Thumbs.db
 
 # Saved by the game
 settings.properties
+
+# Built by build-jar.sh locally and by the Pages workflow
+docs/SnakeGame.jar

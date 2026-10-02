@@ -22,7 +22,10 @@ import snake.ui.render.SnakeColor;
 import snake.ui.render.SnakePalette;
 import snake.ui.render.SnakeRenderer;
 
-/** The board. Paints the current game, or the one that just ended. */
+/**
+ * The board. Paints the current game, or the one that just ended. When the window is bigger than
+ * the board (maximized), the board is scaled up as far as it fits and centered.
+ */
 final class GamePanel extends JPanel {
     /** Cells in front of a snake's start that decorations stay off. */
     private static final int START_LOOKAHEAD = 3;
@@ -43,11 +46,13 @@ final class GamePanel extends JPanel {
 
     private final GameController controller;
     private SnakeColor playerColor = SnakeColor.GREEN;
-    // Each level's tiles and decorations, rendered once on first use
+    // Each level's tiles and decorations, rendered on first use at backgroundScale
     private final Map<Level, BufferedImage> backgrounds = new EnumMap<>(Level.class);
+    private double backgroundScale = 1;
 
     GamePanel(GameController controller) {
         this.controller = controller;
+        setBackground(Theme.PARCHMENT);
     }
 
     void setPlayerColor(SnakeColor playerColor) {
@@ -78,9 +83,28 @@ final class GamePanel extends JPanel {
             return;
         }
 
-        LevelTheme theme = LevelTheme.of(state.getLevel());
-        g2d.drawImage(background(state.getLevel()), 0, 0, null);
+        double scale = Math.min(getWidth() / (double) Board.WIDTH, getHeight() / (double) Board.HEIGHT);
+        if (scale <= 0) {
+            return;
+        }
+        int x = (getWidth() - BoardBackground.scaled(Board.WIDTH, scale)) / 2;
+        int y = (getHeight() - BoardBackground.scaled(Board.HEIGHT, scale)) / 2;
+        g2d.drawImage(background(state.getLevel(), scale), x, y, null);
 
+        Graphics2D board = (Graphics2D) g2d.create();
+        board.translate(x, y);
+        board.scale(scale, scale);
+        paintBoard(board, state);
+        board.dispose();
+
+        if (controller.isPaused()) {
+            paintPausedOverlay(g2d);
+        }
+    }
+
+    /** Items and snakes, in board coordinates. */
+    private void paintBoard(Graphics2D g2d, GameState state) {
+        LevelTheme theme = LevelTheme.of(state.getLevel());
         ItemPainter.Style itemStyle = theme.dark ? ItemPainter.Style.DARK : ItemPainter.Style.light(theme.tileA);
         if (state.isFoodVisible()) {
             float life = state.getLevel().hasVanishingApple() ? controller.getFoodLifeFraction() : -1;
@@ -95,18 +119,19 @@ final class GamePanel extends JPanel {
         }
         Snake player = state.getPlayer();
         SnakeRenderer.paint(g2d, player.segments(), player.direction(), playerColor.palette(theme.dark));
-
-        if (controller.isPaused()) {
-            paintPausedOverlay(g2d);
-        }
     }
 
-    private BufferedImage background(Level level) {
+    private BufferedImage background(Level level, double scale) {
+        if (scale != backgroundScale) {
+            // The window was resized: re-render at the new size rather than stretch a blurry image
+            backgrounds.clear();
+            backgroundScale = scale;
+        }
         BufferedImage image = backgrounds.get(level);
         if (image == null) {
             LevelTheme theme = LevelTheme.of(level);
             Decorations.CellPicker cells = new Decorations.CellPicker(LevelTheme.decorationSeed(level), startCells(level));
-            image = BoardBackground.create(theme.tileA, theme.tileB, theme.decorations, cells);
+            image = BoardBackground.create(theme.tileA, theme.tileB, theme.decorations, cells, scale);
             backgrounds.put(level, image);
         }
         return image;
