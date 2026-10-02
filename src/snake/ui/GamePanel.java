@@ -133,15 +133,27 @@ final class GamePanel extends JPanel {
         }
     }
 
+    /** Dims the board and shows a parchment card saying the game is paused. */
     private void paintPausedOverlay(Graphics2D g2d) {
-        g2d.setColor(new Color(0, 0, 0, 140));
+        g2d.setColor(new Color(0, 0, 0, 110));
         g2d.fillRect(0, 0, getWidth(), getHeight());
 
-        g2d.setColor(Color.WHITE);
-        g2d.setFont(new Font("Arial", Font.BOLD, 48));
-        drawCentered(g2d, "PAUSED", getHeight() / 2);
-        g2d.setFont(new Font("Arial", Font.PLAIN, 16));
-        drawCentered(g2d, "Press P or Space to resume, Esc for the menu", getHeight() / 2 + 40);
+        int cardWidth = 360;
+        int cardHeight = 120;
+        int x = (getWidth() - cardWidth) / 2;
+        int y = (getHeight() - cardHeight) / 2;
+        g2d.setColor(Theme.PARCHMENT);
+        g2d.fillRoundRect(x, y, cardWidth, cardHeight, 36, 36);
+        g2d.setColor(Theme.PILL_BORDER);
+        g2d.setStroke(new BasicStroke(2));
+        g2d.drawRoundRect(x + 1, y + 1, cardWidth - 2, cardHeight - 2, 34, 34);
+
+        g2d.setColor(Theme.TITLE_GREEN);
+        g2d.setFont(Theme.font(Theme.Weight.BOLD, 40));
+        drawCentered(g2d, "Paused", y + 60);
+        g2d.setColor(Theme.TAGLINE);
+        g2d.setFont(Theme.font(Theme.Weight.REGULAR, 15));
+        drawCentered(g2d, "P or Space to resume, Esc for the menu", y + 92);
     }
 
     private void drawCentered(Graphics2D g2d, String text, int baseline) {
