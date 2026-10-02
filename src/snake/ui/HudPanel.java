@@ -63,7 +63,7 @@ final class HudPanel extends JPanel {
         }
         levelLabel.setText(levelText);
 
-        playerScoreLabel.setText("You: " + state.getScore());
+        playerScoreLabel.setText("You: " + state.getScore() + " / " + Level.WIN_SCORE);
 
         if (level.hasAiSnake()) {
             aiScoreLabel.setText("AI: " + state.getAiScore());
