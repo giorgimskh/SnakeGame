@@ -1,6 +1,7 @@
 package snake.ui;
 
 import java.awt.*;
+import java.util.Random;
 import java.util.function.Consumer;
 
 import javax.swing.*;
@@ -12,9 +13,17 @@ import snake.model.Level;
 final class MenuPanel extends JPanel {
     private static final Color BACKGROUND_TOP = new Color(25, 25, 112); // Dark blue
     private static final Color BACKGROUND_BOTTOM = new Color(0, 0, 0);
+    private static final int STAR_COUNT = 50;
+
+    // Fixed so the stars don't jump around on every repaint, e.g. when a button is hovered
+    private final Point[] stars = new Point[STAR_COUNT];
 
     MenuPanel(Consumer<Level> onLevelSelected) {
         super(new BorderLayout());
+        Random random = new Random(42);
+        for (int i = 0; i < STAR_COUNT; i++) {
+            stars[i] = new Point(random.nextInt(Board.WIDTH), random.nextInt(Board.HEIGHT));
+        }
         add(createTitlePanel(), BorderLayout.NORTH);
         add(createButtonsPanel(onLevelSelected), BorderLayout.CENTER);
     }
@@ -33,29 +42,18 @@ final class MenuPanel extends JPanel {
         g2d.setPaint(new GradientPaint(0, 0, BACKGROUND_TOP, getWidth(), getHeight(), BACKGROUND_BOTTOM));
         g2d.fillRect(0, 0, getWidth(), getHeight());
 
-        // Random stars, redrawn on every repaint
         g2d.setColor(new Color(255, 255, 255, 100));
-        for (int i = 0; i < 50; i++) {
-            int x = (int) (Math.random() * getWidth());
-            int y = (int) (Math.random() * getHeight());
-            g2d.fillOval(x, y, 2, 2);
+        for (Point star : stars) {
+            g2d.fillOval(star.x, star.y, 2, 2);
         }
 
         g2d.dispose();
     }
 
     private static JPanel createTitlePanel() {
-        JPanel titlePanel = new JPanel(new BorderLayout()) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2d = (Graphics2D) g.create();
-                g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-                g2d.setPaint(new GradientPaint(0, 0, BACKGROUND_TOP, getWidth(), getHeight(), BACKGROUND_BOTTOM));
-                g2d.fillRect(0, 0, getWidth(), getHeight());
-                g2d.dispose();
-            }
-        };
+        // Transparent, so the menu's own gradient and stars show through without a seam
+        JPanel titlePanel = new JPanel(new BorderLayout());
+        titlePanel.setOpaque(false);
         titlePanel.setPreferredSize(new Dimension(Board.WIDTH, 120));
 
         JLabel titleLabel = new JLabel("SNAKE GAME") {
@@ -63,24 +61,27 @@ final class MenuPanel extends JPanel {
             protected void paintComponent(Graphics g) {
                 Graphics2D g2d = (Graphics2D) g.create();
                 g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+                g2d.setFont(new Font("Arial", Font.BOLD, 48));
+
+                String text = getText();
+                FontMetrics fm = g2d.getFontMetrics();
+                int x = (getWidth() - fm.stringWidth(text)) / 2;
+                int y = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
 
                 // Shadow
                 g2d.setColor(new Color(0, 0, 0, 150));
-                g2d.setFont(new Font("Arial", Font.BOLD, 48));
-                g2d.drawString("SNAKE GAME", 3, 63);
+                g2d.drawString(text, x + 3, y + 3);
 
                 GradientPaint textGradient = new GradientPaint(
                     0, 0, new Color(135, 206, 250), // Light sky blue
                     getWidth(), getHeight(), new Color(255, 255, 255)
                 );
                 g2d.setPaint(textGradient);
-                g2d.drawString("SNAKE GAME", 0, 60);
+                g2d.drawString(text, x, y);
 
                 g2d.dispose();
             }
         };
-        titleLabel.setPreferredSize(new Dimension(Board.WIDTH, 60));
-        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
         titlePanel.add(titleLabel, BorderLayout.CENTER);
         return titlePanel;
     }
