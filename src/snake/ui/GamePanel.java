@@ -18,7 +18,8 @@ import snake.model.Snake;
 import snake.ui.render.BoardBackground;
 import snake.ui.render.Decorations;
 import snake.ui.render.ItemPainter;
-import snake.ui.render.SnakePainter;
+import snake.ui.render.SnakePalette;
+import snake.ui.render.SnakeRenderer;
 
 /** The board. Paints the current game, or the one that just ended. */
 final class GamePanel extends JPanel {
@@ -74,6 +75,7 @@ final class GamePanel extends JPanel {
             return;
         }
 
+        LevelTheme theme = LevelTheme.of(state.getLevel());
         g2d.drawImage(background(state.getLevel()), 0, 0, null);
 
         if (state.isFoodVisible()) {
@@ -83,9 +85,12 @@ final class GamePanel extends JPanel {
             ItemPainter.paintBomb(g2d, state.getBomb());
         }
         if (state.isAiAlive()) {
-            SnakePainter.paintAi(g2d, state.getAi());
+            Snake ai = state.getAi();
+            SnakeRenderer.paint(g2d, ai.segments(), ai.direction(), SnakePalette.AI);
         }
-        SnakePainter.paintPlayer(g2d, state.getPlayer());
+        Snake player = state.getPlayer();
+        SnakeRenderer.paint(g2d, player.segments(), player.direction(),
+                theme.dark ? SnakePalette.PLAYER_ON_DARK : SnakePalette.PLAYER);
 
         if (controller.isPaused()) {
             paintPausedOverlay(g2d);
