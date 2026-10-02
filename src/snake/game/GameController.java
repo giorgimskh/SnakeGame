@@ -78,6 +78,10 @@ public final class GameController {
 
     /** Stops the current game without a result, e.g. when the player returns to the menu. */
     public void stop() {
+        // A game abandoned part-way still counts towards the high score
+        if (running) {
+            recordHighScore();
+        }
         running = false;
         paused = false;
         timers.stopAll();
@@ -161,13 +165,19 @@ public final class GameController {
         }
 
         // A failed timed level does not count towards the high score
-        if (result != TickResult.LEVEL_FAILED && state.getScore() > highScore) {
-            highScore = state.getScore();
-            highScores.save(highScore);
+        if (result != TickResult.LEVEL_FAILED) {
+            recordHighScore();
         }
         // Let the timer callback that ended the game return before the listener opens its modal
         // dialog. Otherwise every replay runs inside the previous game's dialog loop and they nest.
         SwingUtilities.invokeLater(() -> listener.onGameEnded(result));
+    }
+
+    private void recordHighScore() {
+        if (state.getScore() > highScore) {
+            highScore = state.getScore();
+            highScores.save(highScore);
+        }
     }
 
     /** Hides the apple after a while, then respawns it elsewhere, which starts the cycle again. */
