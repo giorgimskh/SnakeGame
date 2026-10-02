@@ -19,6 +19,10 @@ import snake.persistence.HighScoreStore;
  * and the board.
  */
 public final class GameWindow extends JFrame implements GameController.Listener {
+    private static final String NEXT_LEVEL = "Next Level";
+    private static final String RETRY = "Retry";
+    private static final String MENU = "Menu";
+
     private final GameController controller;
     private final HudPanel hudPanel;
     private final MenuPanel menuPanel;
@@ -86,22 +90,31 @@ public final class GameWindow extends JFrame implements GameController.Listener 
             case LEVEL_COMPLETE:
                 title = "Level Complete!";
                 message = "Level " + level.number() + " Complete!\nYour score: " + score
-                        + "\nHigh Score: " + highScore + "\nWould you like to play again?";
+                        + "\nHigh Score: " + highScore;
                 break;
             case LEVEL_FAILED:
                 title = "Level Failed!";
                 message = "Level " + level.number() + " Failed!\nTime's up! Your score: " + score
-                        + "\nYou need " + Level.WIN_SCORE + " points to win!\nWould you like to try again?";
+                        + "\nYou need " + Level.WIN_SCORE + " points to win!";
                 break;
             default:
                 title = "Game Over";
-                message = "Game Over! Your score: " + score + "\nHigh Score: " + highScore
-                        + "\nWould you like to play again?";
+                message = "Game Over! Your score: " + score + "\nHigh Score: " + highScore;
                 break;
         }
 
-        int choice = JOptionPane.showConfirmDialog(this, message, title, JOptionPane.YES_NO_OPTION);
-        if (choice == JOptionPane.YES_OPTION) {
+        Level next = result == TickResult.LEVEL_COMPLETE ? level.next() : null;
+        String[] options = next != null
+                ? new String[] {NEXT_LEVEL, RETRY, MENU}
+                : new String[] {RETRY, MENU};
+        int choice = JOptionPane.showOptionDialog(this, message, title, JOptionPane.DEFAULT_OPTION,
+                JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
+        // Closing the dialog counts as Menu
+        String picked = choice >= 0 ? options[choice] : MENU;
+
+        if (picked.equals(NEXT_LEVEL)) {
+            startLevel(next);
+        } else if (picked.equals(RETRY)) {
             startLevel(level);
         } else {
             showMainMenu();

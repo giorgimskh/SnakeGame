@@ -74,4 +74,10 @@ public enum Level {
     public boolean hasAiSnake() {
         return aiSnake;
     }
+
+    /** The level after this one, or null for the last level. */
+    public Level next() {
+        Level[] levels = values();
+        return ordinal() + 1 < levels.length ? levels[ordinal() + 1] : null;
+    }
 }
