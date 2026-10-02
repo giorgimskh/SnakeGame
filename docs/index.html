@@ -19,12 +19,13 @@
       <h1>Snake Game</h1>
       <p id="message">Loading the Java runtime… the first load can take a minute.</p>
     </div>
-    <script src="https://cjrtnc.leaningtech.com/3.0/loader.js"></script>
+    <script src="https://cjrtnc.leaningtech.com/4.2/loader.js"></script>
     <script>
       (async () => {
         const message = document.getElementById('message');
         try {
           await cheerpjInit({
+            version: 8,
             // Saved files go to /files, which CheerpJ keeps in the browser between visits
             javaProperties: ['snake.dataDir=/files'],
           });
