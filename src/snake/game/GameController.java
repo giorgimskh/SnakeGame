@@ -46,7 +46,6 @@ public final class GameController {
     private int highScore;
 
     private Timer appleTimer;
-    private Timer aiTimer;
     private Timer multiplierTimer;
 
     public GameController(SoundManager sounds, HighScoreStore highScores, Listener listener) {
@@ -71,7 +70,7 @@ public final class GameController {
             startBombCycle();
         }
         if (level.hasAiSnake()) {
-            aiTimer = timers.repeat(AI_MOVE_DELAY_MS, this::aiTick);
+            timers.repeat(AI_MOVE_DELAY_MS, this::aiTick);
         }
 
         listener.onUpdate();
@@ -160,10 +159,10 @@ public final class GameController {
     }
 
     private void aiTick() {
-        if (!state.isAiAlive()) {
-            return;
+        Direction direction = AiSnakeController.chooseDirection(state);
+        if (direction != null) { // null: boxed in, so the AI waits this turn
+            state.moveAi(direction);
         }
-        state.moveAi(AiSnakeController.chooseDirection(state));
         listener.onUpdate();
     }
 
@@ -242,11 +241,6 @@ public final class GameController {
             if (state.getLevel().hasVanishingApple()) {
                 startAppleCycle();
             }
-        }
-
-        @Override
-        public void aiKilled() {
-            timers.stop(aiTimer);
         }
     }
 }

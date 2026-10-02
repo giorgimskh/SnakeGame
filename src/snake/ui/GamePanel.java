@@ -38,10 +38,6 @@ final class GamePanel extends JPanel {
         @Override
         public void foodSpawned() {
         }
-
-        @Override
-        public void aiKilled() {
-        }
     };
 
     private final GameController controller;
@@ -86,7 +82,7 @@ final class GamePanel extends JPanel {
         if (state.getLevel().hasBomb() && state.isBombVisible()) {
             ItemPainter.paintBomb(g2d, state.getBomb(), itemStyle, System.currentTimeMillis());
         }
-        if (state.isAiAlive()) {
+        if (state.getAi() != null) {
             Snake ai = state.getAi();
             SnakeRenderer.paint(g2d, ai.segments(), ai.direction(), SnakePalette.AI);
         }

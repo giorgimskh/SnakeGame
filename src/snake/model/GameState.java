@@ -18,8 +18,6 @@ public final class GameState {
         void multiplierActivated();
 
         void foodSpawned();
-
-        void aiKilled();
     }
 
     public static final long MULTIPLIER_DURATION_MS = 10_000;
@@ -27,9 +25,6 @@ public final class GameState {
     private static final int APPLE_POINTS = 10;
     private static final double MULTIPLIER_CHANCE = 0.2;
     private static final int AI_APPLE_POINTS = 10;
-    private static final int AI_SELF_COLLISION_REWARD = 30;
-    private static final int AI_BOMB_REWARD = 30;
-    private static final int AI_COLLISION_REWARD = 50;
     /** The bomb never appears this many steps or fewer from the player's head. */
     private static final int BOMB_SAFE_DISTANCE = 3;
 
@@ -39,8 +34,7 @@ public final class GameState {
     private long startTime;
 
     private final Snake player;
-    private final Snake ai; // null unless the level has an AI snake
-    private boolean aiAlive;
+    private final Snake ai; // null unless the level has an AI snake. It can't die.
 
     private Point food;
     private FoodType foodType = FoodType.APPLE;
@@ -71,7 +65,6 @@ public final class GameState {
             int y = Board.HEIGHT - u * 4;
             ai = new Snake(Direction.LEFT,
                     new Point(w - u * 4, y), new Point(w - u * 3, y), new Point(w - u * 2, y), new Point(w - u, y));
-            aiAlive = true;
         } else {
             ai = null;
         }
@@ -121,59 +114,43 @@ public final class GameState {
         return true;
     }
 
+    /** Running into any part of the AI snake, head-on included, ends the player's game. */
     private TickResult checkAiCollision() {
-        if (!aiAlive) {
-            return TickResult.CONTINUE;
-        }
-        Point playerHead = player.head();
-        Point aiHead = ai.head();
-
-        // Head-on collision counts as an AI loss, for fairness
-        if (playerHead.equals(aiHead)) {
-            killAi(AI_COLLISION_REWARD);
-            return TickResult.CONTINUE;
-        }
-        if (ai.contains(playerHead)) {
+        if (ai != null && ai.contains(player.head())) {
             return TickResult.PLAYER_DIED;
-        }
-        if (player.contains(aiHead)) {
-            killAi(AI_COLLISION_REWARD);
         }
         return TickResult.CONTINUE;
     }
 
     /**
-     * Moves the AI snake one step in {@code direction}. Its collisions are checked here, right
-     * after it moves, rather than waiting for the player's next step.
+     * True if the AI snake may move into {@code cell}: not onto the player, a visible bomb or its
+     * own body. Its tail cell counts as free, since the tail moves away on the same step.
+     */
+    public boolean isFreeForAi(Point cell) {
+        if (player.contains(cell) || (bombVisible && cell.equals(bomb))) {
+            return false;
+        }
+        List<Point> body = ai.segments();
+        return !body.contains(cell) || cell.equals(body.get(body.size() - 1));
+    }
+
+    /**
+     * Moves the AI snake one step in {@code direction}. The AI can't die: if that cell isn't
+     * {@link #isFreeForAi free}, it stays where it is this turn.
      */
     public void moveAi(Direction direction) {
-        ai.setDirection(direction);
         Point head = Board.stepWrapped(ai.head(), direction);
+        if (!isFreeForAi(head)) {
+            return;
+        }
+        ai.setDirection(direction);
         ai.addHead(head);
-
-        // Grow or drop the tail before the self-collision check, so moving into the cell the
-        // tail is just leaving is allowed, as it is for the player
         if (head.equals(food) && foodVisible) {
             aiScore += AI_APPLE_POINTS;
             spawnFood();
         } else {
             ai.removeTail();
         }
-
-        if (ai.hitsItself()) {
-            killAi(AI_SELF_COLLISION_REWARD);
-        } else if (player.contains(head)) {
-            // Includes running head-first into the player's head
-            killAi(AI_COLLISION_REWARD);
-        } else if (bombVisible && head.equals(bomb)) {
-            killAi(AI_BOMB_REWARD);
-        }
-    }
-
-    private void killAi(int playerReward) {
-        aiAlive = false;
-        events.aiKilled();
-        score += Math.max(0, playerReward);
     }
 
     /** Puts the food on a random free cell. 20% of the time it is a multiplier. */
@@ -195,7 +172,7 @@ public final class GameState {
     }
 
     private boolean onAi(Point p) {
-        return aiAlive && ai.contains(p);
+        return ai != null && ai.contains(p);
     }
 
     /** A random cell that is not {@code blocked}, or null if every cell is. */
@@ -235,10 +212,6 @@ public final class GameState {
     /** The AI snake, or null on levels without one. */
     public Snake getAi() {
         return ai;
-    }
-
-    public boolean isAiAlive() {
-        return aiAlive;
     }
 
     public Point getFood() {

@@ -1,69 +1,95 @@
 package snake.ai;
 
 import java.awt.Point;
-import java.util.List;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.Set;
 
 import snake.model.Board;
 import snake.model.Direction;
 import snake.model.GameState;
 import snake.model.Snake;
 
-/** Steering for the level 5 AI snake. */
+/**
+ * Steering for the level 5 AI snake. It goes for the food but keeps away from the player: it
+ * never enters the cells next to the player's head when it has another choice, keeps a few cells
+ * of distance, and avoids dead ends it could trap itself in.
+ */
 public final class AiSnakeController {
+    /** For a cell the player's head could move into next. */
+    private static final double NEXT_TO_PLAYER_PENALTY = 1000;
+    /** For a cell with less free space behind it than the AI is long. */
+    private static final double DEAD_END_PENALTY = 500;
+    /** Bonus per cell of distance from the player's head, up to {@link #KEEP_AWAY_RANGE}. */
+    private static final double KEEP_AWAY_WEIGHT = 1.5;
+    private static final int KEEP_AWAY_RANGE = 4;
+    /** Small preference for going straight, to break ties. */
+    private static final double STRAIGHT_BONUS = 0.1;
+
     private AiSnakeController() {
     }
 
     /**
-     * Heads for the food along its longer axis, or for the center while the food is hidden. If
-     * that cell is blocked, it tries the other directions except straight back. If every one is
-     * blocked, it keeps going straight.
+     * Picks the AI's next direction, or returns null if every move is blocked, in which case the
+     * AI waits a turn. Each free direction is scored by how close it gets to the food (or the
+     * center while the food is hidden), minus the penalties above.
      */
     public static Direction chooseDirection(GameState state) {
         Snake ai = state.getAi();
         Point head = ai.head();
         Direction current = ai.direction();
-
+        Point playerHead = state.getPlayer().head();
         Point target = state.isFoodVisible() && state.getFood() != null ? state.getFood() : Board.center();
-        int dx = target.x - head.x;
-        int dy = target.y - head.y;
 
-        Direction wanted = current;
-        if (Math.abs(dx) > Math.abs(dy)) {
-            if (dx > 0 && current != Direction.LEFT) {
-                wanted = Direction.RIGHT;
-            } else if (dx < 0 && current != Direction.RIGHT) {
-                wanted = Direction.LEFT;
+        Direction best = null;
+        double bestScore = Double.NEGATIVE_INFINITY;
+        for (Direction direction : Direction.values()) {
+            if (direction == current.opposite()) {
+                continue;
             }
-        } else {
-            if (dy > 0 && current != Direction.UP) {
-                wanted = Direction.DOWN;
-            } else if (dy < 0 && current != Direction.DOWN) {
-                wanted = Direction.UP;
+            Point next = Board.stepWrapped(head, direction);
+            if (!state.isFreeForAi(next)) {
+                continue;
             }
-        }
 
-        if (isFree(Board.stepWrapped(head, wanted), state)) {
-            return wanted;
-        }
-        for (Direction alt : Direction.values()) {
-            if (alt != wanted && alt != current.opposite()
-                    && isFree(Board.stepWrapped(head, alt), state)) {
-                return alt;
+            double score = -Board.distance(next, target);
+            int fromPlayer = Board.distance(next, playerHead);
+            if (fromPlayer <= 1) {
+                score -= NEXT_TO_PLAYER_PENALTY;
+            }
+            score += KEEP_AWAY_WEIGHT * Math.min(fromPlayer, KEEP_AWAY_RANGE);
+            if (freeSpace(state, next, ai.size()) < ai.size()) {
+                score -= DEAD_END_PENALTY;
+            }
+            if (direction == current) {
+                score += STRAIGHT_BONUS;
+            }
+
+            if (score > bestScore) {
+                bestScore = score;
+                best = direction;
             }
         }
-        return current;
+        return best;
     }
 
-    /** True if the AI can move into {@code cell} without hitting a snake or a visible bomb. */
-    private static boolean isFree(Point cell, GameState state) {
-        if (state.getPlayer().contains(cell)) {
-            return false;
+    /** Counts the free cells reachable from {@code start}, stopping once {@code limit} is reached. */
+    private static int freeSpace(GameState state, Point start, int limit) {
+        Set<Point> seen = new HashSet<>();
+        Deque<Point> queue = new ArrayDeque<>();
+        seen.add(start);
+        queue.add(start);
+        while (!queue.isEmpty() && seen.size() < limit) {
+            Point cell = queue.poll();
+            for (Direction direction : Direction.values()) {
+                Point next = Board.stepWrapped(cell, direction);
+                if (!seen.contains(next) && state.isFreeForAi(next)) {
+                    seen.add(next);
+                    queue.add(next);
+                }
+            }
         }
-        if (state.isBombVisible() && cell.equals(state.getBomb())) {
-            return false;
-        }
-        // The AI's own tail moves out of the way on this step
-        List<Point> segments = state.getAi().segments();
-        return !segments.contains(cell) || cell.equals(segments.get(segments.size() - 1));
+        return seen.size();
     }
 }
