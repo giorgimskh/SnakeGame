@@ -154,6 +154,11 @@ public final class GameController {
     private void end(TickResult result) {
         running = false;
         timers.stopAll();
+        if (result == TickResult.LEVEL_COMPLETE) {
+            sounds.playLevelComplete();
+        } else {
+            sounds.playGameOver();
+        }
 
         // A failed timed level does not count towards the high score
         if (result != TickResult.LEVEL_FAILED && state.getScore() > highScore) {
