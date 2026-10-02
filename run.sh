@@ -4,7 +4,7 @@ set -euo pipefail
 mkdir -p bin
 
 echo "Compiling sources..."
-javac -d bin -sourcepath src src/App.java
+javac -source 8 -target 8 -Xlint:-options -d bin -sourcepath src src/App.java
 
 if [ -d src/sounds ]; then
   mkdir -p bin/sounds

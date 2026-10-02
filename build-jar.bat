@@ -2,9 +2,10 @@
 setlocal ENABLEDELAYEDEXPANSION
 
 REM Build classes
-if not exist bin mkdir bin
+if exist bin rmdir /S /Q bin
+mkdir bin
 echo Compiling sources...
-javac -d bin -sourcepath src src\App.java
+javac -source 8 -target 8 -Xlint:-options -d bin -sourcepath src src\App.java
 if errorlevel 1 (
   echo Compilation failed.
   exit /b 1
