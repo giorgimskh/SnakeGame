@@ -23,12 +23,12 @@ pushd bin
 jar cfm ..\dist\SnakeGame.jar ..\dist\MANIFEST.MF .
 popd
 
-REM Add resources (sounds) inside JAR at sounds/
-if exist src\sounds (
-  pushd src
-  jar uf ..\dist\SnakeGame.jar sounds
-  popd
+REM Add resources inside the JAR at sounds/ and fonts/
+pushd src
+for %%D in (sounds fonts) do (
+  if exist %%D jar uf ..\dist\SnakeGame.jar %%D
 )
+popd
 
 REM Copy for GitHub Pages (docs/)
 if not exist docs mkdir docs

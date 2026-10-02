@@ -13,10 +13,12 @@ echo "Main-Class: App" > dist/MANIFEST.MF
 
 (cd bin && jar cfm ../dist/SnakeGame.jar ../dist/MANIFEST.MF .)
 
-# Add resources (sounds) inside JAR at sounds/
-if [ -d src/sounds ]; then
-  (cd src && jar uf ../dist/SnakeGame.jar sounds)
-fi
+# Add resources inside the JAR at sounds/ and fonts/
+for dir in sounds fonts; do
+  if [ -d "src/$dir" ]; then
+    (cd src && jar uf ../dist/SnakeGame.jar "$dir")
+  fi
+done
 
 # Copy for GitHub Pages (docs/)
 mkdir -p docs

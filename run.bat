@@ -12,9 +12,9 @@ if errorlevel 1 (
   exit /b 1
 )
 
-REM Copy sound assets
-if exist src\sounds (
-  xcopy /E /I /Y src\sounds bin\sounds >nul 2>nul
+REM Copy resources, which are loaded from the classpath
+for %%D in (sounds fonts) do (
+  if exist src\%%D xcopy /E /I /Y src\%%D bin\%%D >nul 2>nul
 )
 
 REM Run the app
