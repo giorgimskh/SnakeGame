@@ -12,6 +12,7 @@ import javax.sound.sampled.Clip;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
+import javax.swing.SwingUtilities;
 
 /**
  * Background music and sound effects, loaded from the classpath ({@code /sounds/...}), which is
@@ -22,22 +23,38 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 public final class SoundManager {
     private static final float TONE_SAMPLE_RATE = 22050f;
 
-    private boolean audioAvailable = true; // false once no audio output could be opened
-    private boolean musicEnabled = true;
+    // Written by the music loader thread as well as the EDT
+    private volatile boolean audioAvailable = true; // false once no audio output could be opened
+    private volatile boolean musicEnabled = true;
+    private volatile boolean musicWanted; // a game wants the music playing, even if it hasn't loaded yet
     private boolean effectsEnabled = true;
 
-    private final Clip backgroundMusic;
+    private volatile Clip backgroundMusic; // null until the loader thread has opened it
     private final Clip eatingSound;
     private final Clip multiplierSound;
     private final Clip gameOverSound;
     private final Clip levelCompleteSound;
 
     public SoundManager() {
-        backgroundMusic = loadMusic("sounds/background.wav");
         eatingSound = loadEffect("sounds/eat.wav", 880, 70);
         multiplierSound = loadEffect("sounds/multiplier.wav", 1320, 160);
         gameOverSound = loadEffect("sounds/gameover.wav", 196, 450);
         levelCompleteSound = loadEffect("sounds/levelcomplete.wav", 1047, 350);
+        // The music is the one large file and decoding it is slow (especially in CheerpJ), so it loads
+        // in the background and the window doesn't wait for it
+        Thread loader = new Thread(this::loadMusicInBackground, "music-loader");
+        loader.setDaemon(true);
+        loader.start();
+    }
+
+    private void loadMusicInBackground() {
+        Clip clip = loadMusic("sounds/background.wav");
+        SwingUtilities.invokeLater(() -> {
+            backgroundMusic = clip;
+            if (musicWanted) {
+                startMusic(); // A game started before the music was ready
+            }
+        });
     }
 
     private Clip loadMusic(String path) {
@@ -155,6 +172,7 @@ public final class SoundManager {
     }
 
     public void startMusic() {
+        musicWanted = true;
         if (backgroundMusic != null && musicEnabled) {
             backgroundMusic.setFramePosition(0);
             backgroundMusic.loop(Clip.LOOP_CONTINUOUSLY);
@@ -163,12 +181,14 @@ public final class SoundManager {
 
     /** Continues the music from where {@link #stopMusic()} left it. */
     public void resumeMusic() {
+        musicWanted = true;
         if (backgroundMusic != null && musicEnabled) {
             backgroundMusic.loop(Clip.LOOP_CONTINUOUSLY);
         }
     }
 
     public void stopMusic() {
+        musicWanted = false;
         if (backgroundMusic != null && backgroundMusic.isRunning()) {
             backgroundMusic.stop();
         }
