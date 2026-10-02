@@ -186,11 +186,12 @@ public final class GameState {
         events.foodSpawned();
     }
 
+    /** Puts the bomb on a random cell that is not under the player or the food. */
     public void spawnBomb() {
         Point p;
         do {
             p = Board.randomCell(random);
-        } while (player.contains(p) && (food == null || !p.equals(food)));
+        } while (player.contains(p) || p.equals(food));
 
         bomb = p;
     }
