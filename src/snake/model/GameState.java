@@ -1,7 +1,10 @@
 package snake.model;
 
 import java.awt.Point;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
+import java.util.function.Predicate;
 
 /**
  * State and rules of a single game, from level start until it ends. It does not use Swing:
@@ -27,6 +30,8 @@ public final class GameState {
     private static final int AI_SELF_COLLISION_REWARD = 30;
     private static final int AI_BOMB_REWARD = 30;
     private static final int AI_COLLISION_REWARD = 50;
+    /** The bomb never appears this many steps or fewer from the player's head. */
+    private static final int BOMB_SAFE_DISTANCE = 3;
 
     private final Level level;
     private final Random random;
@@ -173,24 +178,38 @@ public final class GameState {
 
     /** Puts the food on a random free cell. 20% of the time it is a multiplier. */
     public void spawnFood() {
-        Point p;
-        do {
-            p = Board.randomCell(random);
-        } while (player.contains(p));
-
-        food = p;
+        food = randomFreeCell(p -> player.contains(p) || onAi(p) || (bombVisible && p.equals(bomb)));
         foodType = random.nextDouble() < MULTIPLIER_CHANCE ? FoodType.MULTIPLIER : FoodType.APPLE;
         events.foodSpawned();
     }
 
-    /** Puts the bomb on a random cell that is not under the player or the food. */
+    /**
+     * Puts the bomb on a random cell that is not under either snake or the food, and not within
+     * {@link #BOMB_SAFE_DISTANCE} steps of the player's head, so it can't appear where the player
+     * has no time to dodge it.
+     */
     public void spawnBomb() {
-        Point p;
-        do {
-            p = Board.randomCell(random);
-        } while (player.contains(p) || p.equals(food));
+        Point head = player.head();
+        bomb = randomFreeCell(p -> player.contains(p) || onAi(p) || p.equals(food)
+                || Board.distance(p, head) <= BOMB_SAFE_DISTANCE);
+    }
 
-        bomb = p;
+    private boolean onAi(Point p) {
+        return aiAlive && ai.contains(p);
+    }
+
+    /** A random cell that is not {@code blocked}, or null if every cell is. */
+    private Point randomFreeCell(Predicate<Point> blocked) {
+        List<Point> free = new ArrayList<>();
+        for (int x = 0; x < Board.WIDTH; x += Board.UNIT) {
+            for (int y = 0; y < Board.HEIGHT; y += Board.UNIT) {
+                Point p = new Point(x, y);
+                if (!blocked.test(p)) {
+                    free.add(p);
+                }
+            }
+        }
+        return free.isEmpty() ? null : free.get(random.nextInt(free.size()));
     }
 
     public void deactivateMultiplier() {

@@ -1,7 +1,6 @@
 package snake.model;
 
 import java.awt.Point;
-import java.util.Random;
 
 /**
  * Board geometry. Positions are pixel coordinates that are always multiples of {@link #UNIT}.
@@ -44,10 +43,11 @@ public final class Board {
         }
     }
 
-    public static Point randomCell(Random random) {
-        int x = random.nextInt(COLUMNS) * UNIT;
-        int y = random.nextInt(ROWS) * UNIT;
-        return new Point(x, y);
+    /** Number of steps between two cells, taking the shortest way around the wrapping edges. */
+    public static int distance(Point a, Point b) {
+        int dx = Math.abs(a.x - b.x) / UNIT;
+        int dy = Math.abs(a.y - b.y) / UNIT;
+        return Math.min(dx, COLUMNS - dx) + Math.min(dy, ROWS - dy);
     }
 
     public static Point center() {
