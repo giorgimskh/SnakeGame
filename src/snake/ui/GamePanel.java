@@ -11,7 +11,7 @@ import snake.ui.render.ItemPainter;
 import snake.ui.render.SnakePainter;
 import snake.ui.render.ThemePainter;
 
-/** The board. Paints the current game while it is running. */
+/** The board. Paints the current game, or the one that just ended. */
 final class GamePanel extends JPanel {
     private final GameController controller;
 
@@ -36,10 +36,11 @@ final class GamePanel extends JPanel {
         g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
         g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
-        if (!controller.isRunning()) {
+        // Keep painting the last game after it ends, so it stays visible behind the end dialog
+        GameState state = controller.getState();
+        if (state == null) {
             return;
         }
-        GameState state = controller.getState();
 
         ThemePainter.paintBackground(g2d, state.getLevel(), getWidth(), getHeight());
         ThemePainter.paintVignette(g2d, getWidth(), getHeight());
