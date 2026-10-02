@@ -78,11 +78,13 @@ final class GamePanel extends JPanel {
         LevelTheme theme = LevelTheme.of(state.getLevel());
         g2d.drawImage(background(state.getLevel()), 0, 0, null);
 
+        ItemPainter.Style itemStyle = theme.dark ? ItemPainter.Style.DARK : ItemPainter.Style.light(theme.tileA);
         if (state.isFoodVisible()) {
-            ItemPainter.paintFood(g2d, state.getFood(), state.getFoodType());
+            float life = state.getLevel().hasVanishingApple() ? controller.getFoodLifeFraction() : -1;
+            ItemPainter.paintFood(g2d, state.getFood(), state.getFoodType(), itemStyle, life);
         }
         if (state.getLevel().hasBomb() && state.isBombVisible()) {
-            ItemPainter.paintBomb(g2d, state.getBomb());
+            ItemPainter.paintBomb(g2d, state.getBomb(), itemStyle, System.currentTimeMillis());
         }
         if (state.isAiAlive()) {
             Snake ai = state.getAi();

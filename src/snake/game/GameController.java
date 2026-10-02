@@ -42,6 +42,7 @@ public final class GameController {
     private boolean running;
     private boolean paused;
     private long pausedAt;
+    private long foodShownAt; // when the vanishing apple's visible time last started
     private int highScore;
 
     private Timer appleTimer;
@@ -104,6 +105,10 @@ public final class GameController {
             paused = false;
             state.shiftClock(now - pausedAt);
             timers.resumeAll();
+            // resumeAll() restarts the apple's hide timer with its full delay, so restart its countdown too
+            if (state.getLevel().hasVanishingApple() && state.isFoodVisible()) {
+                foodShownAt = now;
+            }
             // A resumed one-shot timer waits its full delay again, so give the 2x the time it had left
             if (state.isMultiplierActive()) {
                 startMultiplierTimer((int) state.getMultiplierRemainingMs(now));
@@ -124,6 +129,13 @@ public final class GameController {
 
     public boolean isPaused() {
         return paused;
+    }
+
+    /** How much of the vanishing apple's visible time is left, from 1 down to 0. Frozen while paused. */
+    public float getFoodLifeFraction() {
+        long now = paused ? pausedAt : System.currentTimeMillis();
+        float left = 1f - (float) (now - foodShownAt) / ITEM_VISIBLE_MS;
+        return Math.max(0f, Math.min(1f, left));
     }
 
     /** The current or most recent game. Null before the first game starts. */
@@ -191,6 +203,7 @@ public final class GameController {
             });
         });
         state.setFoodVisible(true);
+        foodShownAt = System.currentTimeMillis();
     }
 
     /** Places a bomb, hides it after a while, then starts over somewhere else. */
