@@ -42,7 +42,6 @@ public final class GameController {
     private int highScore;
 
     private Timer appleTimer;
-    private Timer bombTimer;
     private Timer aiTimer;
     private Timer multiplierTimer;
 
@@ -56,16 +55,13 @@ public final class GameController {
     public void start(Level level) {
         timers.stopAll();
         state = new GameState(level, random, System.currentTimeMillis(), events);
-        state.spawnFood();
+        state.spawnFood(); // also starts the vanishing-apple cycle on levels that have one
         running = true;
 
         sounds.startMusic();
 
         timers.repeat(level.tickDelayMs(), this::tick);
 
-        if (level.hasVanishingApple()) {
-            startAppleCycle();
-        }
         if (level.hasBomb()) {
             startBombCycle();
         }
@@ -132,7 +128,7 @@ public final class GameController {
         listener.onGameEnded(result);
     }
 
-    /** Hides the apple after a while, then respawns it elsewhere. */
+    /** Hides the apple after a while, then respawns it elsewhere, which starts the cycle again. */
     private void startAppleCycle() {
         timers.stop(appleTimer);
         appleTimer = timers.once(ITEM_VISIBLE_MS, () -> {
@@ -145,15 +141,11 @@ public final class GameController {
         state.setFoodVisible(true);
     }
 
-    /** Places a bomb, hides it after a while, then respawns it elsewhere. */
+    /** Places a bomb, hides it after a while, then starts over somewhere else. */
     private void startBombCycle() {
-        timers.stop(bombTimer);
-        bombTimer = timers.once(ITEM_VISIBLE_MS, () -> {
+        timers.once(ITEM_VISIBLE_MS, () -> {
             state.setBombVisible(false);
-            timers.once(ITEM_RESPAWN_DELAY_MS, () -> {
-                state.spawnBomb();
-                state.setBombVisible(true);
-            });
+            timers.once(ITEM_RESPAWN_DELAY_MS, this::startBombCycle);
         });
         state.spawnBomb();
         state.setBombVisible(true);
@@ -177,8 +169,7 @@ public final class GameController {
 
         @Override
         public void foodSpawned() {
-            // Only level 3 restarts the vanish cycle on every new apple
-            if (state.getLevel() == Level.LEVEL_3) {
+            if (state.getLevel().hasVanishingApple()) {
                 startAppleCycle();
             }
         }
