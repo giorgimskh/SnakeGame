@@ -40,6 +40,8 @@ public final class GameController {
 
     private GameState state;
     private boolean running;
+    private boolean paused;
+    private long pausedAt;
     private int highScore;
 
     private Timer appleTimer;
@@ -58,6 +60,7 @@ public final class GameController {
         state = new GameState(level, random, System.currentTimeMillis(), events);
         state.spawnFood(); // also starts the vanishing-apple cycle on levels that have one
         running = true;
+        paused = false;
 
         sounds.startMusic();
 
@@ -76,16 +79,47 @@ public final class GameController {
     /** Stops the current game without a result, e.g. when the player returns to the menu. */
     public void stop() {
         running = false;
+        paused = false;
         timers.stopAll();
         sounds.stopMusic();
     }
 
     public void turn(Direction direction) {
-        state.getPlayer().turn(direction);
+        if (!paused) {
+            state.getPlayer().turn(direction);
+        }
+    }
+
+    /** Freezes or unfreezes the running game, including every timer and countdown. */
+    public void togglePause() {
+        if (!running) {
+            return;
+        }
+        long now = System.currentTimeMillis();
+        if (paused) {
+            paused = false;
+            state.shiftClock(now - pausedAt);
+            timers.resumeAll();
+            // A resumed one-shot timer waits its full delay again, so give the 2x the time it had left
+            if (state.isMultiplierActive()) {
+                startMultiplierTimer((int) state.getMultiplierRemainingMs(now));
+            }
+            sounds.resumeMusic();
+        } else {
+            paused = true;
+            pausedAt = now;
+            timers.pauseAll();
+            sounds.stopMusic();
+        }
+        listener.onUpdate();
     }
 
     public boolean isRunning() {
         return running;
+    }
+
+    public boolean isPaused() {
+        return paused;
     }
 
     /** The current or most recent game. Null before the first game starts. */
@@ -154,6 +188,15 @@ public final class GameController {
         state.setBombVisible(true);
     }
 
+    /** Turns the 2x off after {@code delayMs}, replacing any earlier countdown. */
+    private void startMultiplierTimer(int delayMs) {
+        timers.stop(multiplierTimer);
+        multiplierTimer = timers.once(delayMs, () -> {
+            state.deactivateMultiplier();
+            listener.onUpdate();
+        });
+    }
+
     private final class StateEvents implements GameState.Events {
         @Override
         public void appleEaten() {
@@ -162,11 +205,7 @@ public final class GameController {
 
         @Override
         public void multiplierActivated() {
-            timers.stop(multiplierTimer);
-            multiplierTimer = timers.once((int) GameState.MULTIPLIER_DURATION_MS, () -> {
-                state.deactivateMultiplier();
-                listener.onUpdate();
-            });
+            startMultiplierTimer((int) GameState.MULTIPLIER_DURATION_MS);
             sounds.playMultiplier();
         }
 

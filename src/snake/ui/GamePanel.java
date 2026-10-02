@@ -55,5 +55,25 @@ final class GamePanel extends JPanel {
             SnakePainter.paintAi(g2d, state.getAi());
         }
         SnakePainter.paintPlayer(g2d, state.getPlayer());
+
+        if (controller.isPaused()) {
+            paintPausedOverlay(g2d);
+        }
+    }
+
+    private void paintPausedOverlay(Graphics2D g2d) {
+        g2d.setColor(new Color(0, 0, 0, 140));
+        g2d.fillRect(0, 0, getWidth(), getHeight());
+
+        g2d.setColor(Color.WHITE);
+        g2d.setFont(new Font("Arial", Font.BOLD, 48));
+        drawCentered(g2d, "PAUSED", getHeight() / 2);
+        g2d.setFont(new Font("Arial", Font.PLAIN, 16));
+        drawCentered(g2d, "Press P or Space to resume, Esc for the menu", getHeight() / 2 + 40);
+    }
+
+    private void drawCentered(Graphics2D g2d, String text, int baseline) {
+        FontMetrics fm = g2d.getFontMetrics();
+        g2d.drawString(text, (getWidth() - fm.stringWidth(text)) / 2, baseline);
     }
 }

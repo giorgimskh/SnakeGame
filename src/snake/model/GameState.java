@@ -36,7 +36,7 @@ public final class GameState {
     private final Level level;
     private final Random random;
     private final Events events;
-    private final long startTime;
+    private long startTime;
 
     private final Snake player;
     private final Snake ai; // null unless the level has an AI snake
@@ -275,6 +275,16 @@ public final class GameState {
 
     public long getRemainingTimeMs(long now) {
         return Math.max(0, level.timeLimitMs() - (now - startTime));
+    }
+
+    public long getMultiplierRemainingMs(long now) {
+        return Math.max(0, MULTIPLIER_DURATION_MS - (now - multiplierStartTime));
+    }
+
+    /** Moves the game's clock forward by {@code ms}, e.g. the time it was paused, so countdowns don't drain. */
+    public void shiftClock(long ms) {
+        startTime += ms;
+        multiplierStartTime += ms;
     }
 
     public long getMultiplierSecondsLeft(long now) {

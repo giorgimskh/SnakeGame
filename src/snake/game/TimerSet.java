@@ -41,6 +41,20 @@ final class TimerSet {
         }
     }
 
+    /** Stops every pending timer for now, keeping track of them for {@link #resumeAll()}. */
+    void pauseAll() {
+        for (Timer timer : timers) {
+            timer.stop();
+        }
+    }
+
+    /** Restarts the timers stopped by {@link #pauseAll()}. One-shot timers wait their full delay again. */
+    void resumeAll() {
+        for (Timer timer : timers) {
+            timer.start();
+        }
+    }
+
     /** Stops every pending timer, including one-shot respawn timers. */
     void stopAll() {
         for (Timer timer : timers) {

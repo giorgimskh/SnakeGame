@@ -13,7 +13,7 @@ import snake.game.GameController;
 import snake.model.Direction;
 
 /**
- * Arrow keys or WASD steer the snake and Esc returns to the menu. Keys only work while a game is running.
+ * Arrow keys or WASD steer the snake, P or Space pauses and Esc returns to the menu. Keys only work while a game is running.
  * They are key bindings on the root pane, so they work whichever component in the window has focus.
  */
 final class KeyboardInput {
@@ -33,6 +33,7 @@ final class KeyboardInput {
         input.bind("turnDown", () -> controller.turn(Direction.DOWN), "DOWN", "S");
         input.bind("turnLeft", () -> controller.turn(Direction.LEFT), "LEFT", "A");
         input.bind("turnRight", () -> controller.turn(Direction.RIGHT), "RIGHT", "D");
+        input.bind("pause", controller::togglePause, "P", "SPACE");
         input.bind("menu", onEscape, "ESCAPE");
     }
 

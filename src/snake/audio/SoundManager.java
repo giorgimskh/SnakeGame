@@ -102,6 +102,13 @@ public final class SoundManager {
         }
     }
 
+    /** Continues the music from where {@link #stopMusic()} left it. */
+    public void resumeMusic() {
+        if (backgroundMusic != null) {
+            backgroundMusic.loop(Clip.LOOP_CONTINUOUSLY);
+        }
+    }
+
     public void stopMusic() {
         if (backgroundMusic != null && backgroundMusic.isRunning()) {
             backgroundMusic.stop();
