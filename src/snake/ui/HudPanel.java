@@ -8,7 +8,7 @@ import javax.swing.JPanel;
 import snake.model.GameState;
 import snake.model.Level;
 
-/** The bar above the board: level/time, player score, AI score, high score and 2x status. */
+/** The bar above the board during a game: level/time, player score, AI score, high score and 2x status. */
 final class HudPanel extends JPanel {
     private final JLabel levelLabel = label(14);
     private final JLabel playerScoreLabel = label(16);
@@ -41,15 +41,6 @@ final class HudPanel extends JPanel {
         gbc.gridx = column;
         gbc.anchor = anchor;
         add(label, gbc);
-    }
-
-    /** Shows only the high score. */
-    void showMenu(int highScore) {
-        levelLabel.setText("");
-        playerScoreLabel.setText("");
-        aiScoreLabel.setText("");
-        highScoreLabel.setText("High: " + highScore);
-        multiplierLabel.setText("");
     }
 
     void update(GameState state, int highScore, long now) {

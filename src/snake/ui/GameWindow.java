@@ -15,8 +15,9 @@ import snake.model.TickResult;
 import snake.persistence.HighScoreStore;
 
 /**
- * The application window. The HUD sits at the top, and the center switches between the menu
- * and the board.
+ * The application window. The center switches between the menu and the board, and the HUD sits
+ * above the board during a game. The window is re-packed on each switch, so it fits the 600×720
+ * menu and the 600×600 board.
  */
 public final class GameWindow extends JFrame implements GameController.Listener {
     private static final String NEXT_LEVEL = "Next Level";
@@ -25,7 +26,7 @@ public final class GameWindow extends JFrame implements GameController.Listener 
 
     private final GameController controller;
     private final HudPanel hudPanel;
-    private final MenuPanel menuPanel;
+    private final MainMenuPanel menuPanel;
     private final GamePanel gamePanel;
 
     public GameWindow() {
@@ -37,31 +38,33 @@ public final class GameWindow extends JFrame implements GameController.Listener 
         controller = new GameController(new SoundManager(), highScores, this);
 
         hudPanel = new HudPanel();
-        menuPanel = new MenuPanel(this::startLevel);
+        menuPanel = new MainMenuPanel(this::startLevel);
         gamePanel = new GamePanel(controller);
 
         setLayout(new BorderLayout());
         add(hudPanel, BorderLayout.NORTH);
-        add(menuPanel, BorderLayout.CENTER);
-
-        // Size the frame around the 600x600 center panel
-        pack();
-        setLocationRelativeTo(null);
 
         KeyboardInput.install(getRootPane(), controller, this::showMainMenu);
 
         showMainMenu();
+        setLocationRelativeTo(null);
     }
 
     private void showMainMenu() {
         controller.stop();
+        hudPanel.setVisible(false);
+        menuPanel.setHighScore(controller.getHighScore());
         showCenter(menuPanel);
-        hudPanel.showMenu(controller.getHighScore());
+        pack();
+        menuPanel.focusFirstCard();
     }
 
     private void startLevel(Level level) {
+        hudPanel.setVisible(true);
         showCenter(gamePanel);
         controller.start(level);
+        // Pack after start() has filled in the HUD, so its height is known
+        pack();
     }
 
     private void showCenter(JPanel panel) {

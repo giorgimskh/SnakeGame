@@ -2,21 +2,21 @@ package snake.model;
 
 /**
  * Every level and its rules. To add or change a level, edit this enum, then add its
- * background in {@code ThemePainter} and its menu button colors in {@code MenuPanel}.
+ * background in {@code ThemePainter}, its menu card in {@code MainMenuPanel.card} and its card
+ * scene in {@code BiomeScenes}.
  */
 public enum Level {
-    //        n  menu title                                     theme     delay  limit    vanish bomb   ai
-    LEVEL_1(1, "LEVEL 1 - Desert Time Attack (3 min)",        "Desert", 100, 180_000, false, false, false),
-    LEVEL_2(2, "LEVEL 2 - Grass Speed Challenge",             "Grass",   80,       0, false, false, false),
-    LEVEL_3(3, "LEVEL 3 - Ocean Speed + Vanishing",           "Ocean",   70,       0, true,  false, false),
-    LEVEL_4(4, "LEVEL 4 - Forest Speed + Vanishing + Bomb",   "Forest",  60,       0, true,  true,  false),
-    LEVEL_5(5, "LEVEL 5 - Space AI Snake Battle + Bomb",      "Space",   70,       0, true,  true,  true);
+    //        n  theme     delay  limit    vanish bomb   ai
+    LEVEL_1(1, "Desert", 100, 180_000, false, false, false),
+    LEVEL_2(2, "Grass",   80,       0, false, false, false),
+    LEVEL_3(3, "Ocean",   70,       0, true,  false, false),
+    LEVEL_4(4, "Forest",  60,       0, true,  true,  false),
+    LEVEL_5(5, "Space",   70,       0, true,  true,  true);
 
     /** Points needed to win a level. On a timed level, this is checked when time runs out. */
     public static final int WIN_SCORE = 300;
 
     private final int number;
-    private final String menuTitle;
     private final String themeName;
     private final int tickDelayMs;
     private final long timeLimitMs;
@@ -24,10 +24,9 @@ public enum Level {
     private final boolean bomb;
     private final boolean aiSnake;
 
-    Level(int number, String menuTitle, String themeName, int tickDelayMs, long timeLimitMs,
+    Level(int number, String themeName, int tickDelayMs, long timeLimitMs,
           boolean vanishingApple, boolean bomb, boolean aiSnake) {
         this.number = number;
-        this.menuTitle = menuTitle;
         this.themeName = themeName;
         this.tickDelayMs = tickDelayMs;
         this.timeLimitMs = timeLimitMs;
@@ -38,10 +37,6 @@ public enum Level {
 
     public int number() {
         return number;
-    }
-
-    public String menuTitle() {
-        return menuTitle;
     }
 
     public String themeName() {
