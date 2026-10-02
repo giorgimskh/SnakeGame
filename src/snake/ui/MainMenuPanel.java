@@ -17,7 +17,6 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
@@ -39,8 +38,9 @@ final class MainMenuPanel extends JPanel {
 
     private final Header header = new Header();
     private BiomeCard firstCard;
+    private PillButton settingsButton;
 
-    MainMenuPanel(Consumer<Level> onLevelSelected) {
+    MainMenuPanel(Consumer<Level> onLevelSelected, Runnable onSettings) {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         setBackground(Theme.PARCHMENT);
         setOpaque(true);
@@ -71,7 +71,7 @@ final class MainMenuPanel extends JPanel {
 
         add(Box.createVerticalStrut(GAP - M * 2));
         add(Box.createVerticalGlue());
-        add(createBottomRow());
+        add(createBottomRow(onSettings));
     }
 
     @Override
@@ -85,6 +85,10 @@ final class MainMenuPanel extends JPanel {
 
     void focusFirstCard() {
         firstCard.requestFocusInWindow();
+    }
+
+    void focusSettingsButton() {
+        settingsButton.requestFocusInWindow();
     }
 
     /** Fixes {@code component}'s width to the row width and left-aligns it in the column. */
@@ -102,10 +106,10 @@ final class MainMenuPanel extends JPanel {
                 theme.cardTitle, theme.cardSubtitle, theme.cardScene);
     }
 
-    private JPanel createBottomRow() {
+    private JPanel createBottomRow(Runnable onSettings) {
         PillButton settings = new PillButton("Settings", Theme.PILL_FILL, Theme.PILL_BORDER, Theme.PILL_TEXT);
-        settings.addActionListener(e -> JOptionPane.showMessageDialog(this,
-                "Settings are coming soon.", "Settings", JOptionPane.INFORMATION_MESSAGE));
+        settings.addActionListener(e -> onSettings.run());
+        settingsButton = settings;
 
         PillButton quit = new PillButton("Quit", Theme.TITLE_GREEN, null, Color.WHITE);
         quit.addActionListener(e -> System.exit(0));

@@ -1,6 +1,7 @@
 package snake.ui;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.io.File;
 
 import javax.swing.JFrame;
@@ -13,11 +14,14 @@ import snake.model.GameState;
 import snake.model.Level;
 import snake.model.TickResult;
 import snake.persistence.HighScoreStore;
+import snake.persistence.Settings;
+import snake.persistence.SettingsStore;
+import snake.ui.render.SnakeColor;
 
 /**
- * The application window. The center switches between the menu and the board, and the HUD sits
- * above the board during a game. The window is re-packed on each switch, so it fits the 600×720
- * menu and the 600×600 board.
+ * The application window. The center switches between the menu, the settings screen and the
+ * board, and the HUD sits above the board during a game. The window is re-packed on each switch,
+ * so it fits the 600×720 menu and settings and the 600×600 board.
  */
 public final class GameWindow extends JFrame implements GameController.Listener {
     private static final String NEXT_LEVEL = "Next Level";
@@ -25,8 +29,12 @@ public final class GameWindow extends JFrame implements GameController.Listener 
     private static final String MENU = "Menu";
 
     private final GameController controller;
+    private final SoundManager sounds;
+    private final SettingsStore settingsStore;
+    private final Settings settings;
     private final HudPanel hudPanel;
     private final MainMenuPanel menuPanel;
+    private final SettingsPanel settingsPanel;
     private final GamePanel gamePanel;
 
     public GameWindow() {
@@ -35,11 +43,16 @@ public final class GameWindow extends JFrame implements GameController.Listener 
         setResizable(false);
 
         HighScoreStore highScores = new HighScoreStore(new File("highscore.txt"));
-        controller = new GameController(new SoundManager(), highScores, this);
+        sounds = new SoundManager();
+        controller = new GameController(sounds, highScores, this);
+        settingsStore = new SettingsStore(new File("settings.properties"));
+        settings = settingsStore.load();
 
         hudPanel = new HudPanel();
-        menuPanel = new MainMenuPanel(this::startLevel);
+        menuPanel = new MainMenuPanel(this::startLevel, this::showSettings);
+        settingsPanel = new SettingsPanel(settings, this::settingsChanged, this::closeSettings);
         gamePanel = new GamePanel(controller);
+        applySettings();
 
         setLayout(new BorderLayout());
         add(hudPanel, BorderLayout.NORTH);
@@ -51,12 +64,39 @@ public final class GameWindow extends JFrame implements GameController.Listener 
     }
 
     private void showMainMenu() {
+        openMenu();
+        menuPanel.focusFirstCard();
+    }
+
+    private void openMenu() {
         controller.stop();
         hudPanel.setVisible(false);
         menuPanel.setHighScore(controller.getHighScore());
         showCenter(menuPanel);
         pack();
-        menuPanel.focusFirstCard();
+    }
+
+    private void showSettings() {
+        showCenter(settingsPanel);
+        pack();
+        settingsPanel.focusFirst();
+    }
+
+    private void closeSettings() {
+        openMenu();
+        menuPanel.focusSettingsButton();
+    }
+
+    /** A setting was changed on the settings screen: use it now and remember it. */
+    private void settingsChanged() {
+        applySettings();
+        settingsStore.save(settings);
+    }
+
+    private void applySettings() {
+        sounds.setMusicEnabled(settings.isMusic());
+        sounds.setEffectsEnabled(settings.isSoundEffects());
+        gamePanel.setPlayerColor(SnakeColor.fromName(settings.getSnakeColor()));
     }
 
     private void startLevel(Level level) {
@@ -68,7 +108,10 @@ public final class GameWindow extends JFrame implements GameController.Listener 
     }
 
     private void showCenter(JPanel panel) {
-        getContentPane().remove(panel == menuPanel ? gamePanel : menuPanel);
+        Component current = ((BorderLayout) getContentPane().getLayout()).getLayoutComponent(BorderLayout.CENTER);
+        if (current != null && current != panel) {
+            getContentPane().remove(current);
+        }
         getContentPane().add(panel, BorderLayout.CENTER);
         panel.revalidate();
         panel.repaint();

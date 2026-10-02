@@ -18,6 +18,7 @@ import snake.model.Snake;
 import snake.ui.render.BoardBackground;
 import snake.ui.render.Decorations;
 import snake.ui.render.ItemPainter;
+import snake.ui.render.SnakeColor;
 import snake.ui.render.SnakePalette;
 import snake.ui.render.SnakeRenderer;
 
@@ -41,11 +42,17 @@ final class GamePanel extends JPanel {
     };
 
     private final GameController controller;
+    private SnakeColor playerColor = SnakeColor.GREEN;
     // Each level's tiles and decorations, rendered once on first use
     private final Map<Level, BufferedImage> backgrounds = new EnumMap<>(Level.class);
 
     GamePanel(GameController controller) {
         this.controller = controller;
+    }
+
+    void setPlayerColor(SnakeColor playerColor) {
+        this.playerColor = playerColor;
+        repaint();
     }
 
     @Override
@@ -87,8 +94,7 @@ final class GamePanel extends JPanel {
             SnakeRenderer.paint(g2d, ai.segments(), ai.direction(), SnakePalette.AI);
         }
         Snake player = state.getPlayer();
-        SnakeRenderer.paint(g2d, player.segments(), player.direction(),
-                theme.dark ? SnakePalette.PLAYER_ON_DARK : SnakePalette.PLAYER);
+        SnakeRenderer.paint(g2d, player.segments(), player.direction(), playerColor.palette(theme.dark));
 
         if (controller.isPaused()) {
             paintPausedOverlay(g2d);

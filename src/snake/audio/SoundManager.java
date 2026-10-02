@@ -23,6 +23,8 @@ public final class SoundManager {
     private static final float TONE_SAMPLE_RATE = 22050f;
 
     private boolean audioAvailable = true; // false once no audio output could be opened
+    private boolean musicEnabled = true;
+    private boolean effectsEnabled = true;
 
     private final Clip backgroundMusic;
     private final Clip eatingSound;
@@ -131,16 +133,29 @@ public final class SoundManager {
         play(levelCompleteSound);
     }
 
-    private static void play(Clip clip) {
-        if (clip != null) {
+    private void play(Clip clip) {
+        if (clip != null && effectsEnabled) {
             clip.stop(); // So a sound that is still playing starts over
             clip.setFramePosition(0);
             clip.start();
         }
     }
 
+    /** Turns the background music on or off. Turning it off stops it; it starts with the next game. */
+    public void setMusicEnabled(boolean enabled) {
+        musicEnabled = enabled;
+        if (!enabled) {
+            stopMusic();
+        }
+    }
+
+    /** Turns the sound effects on or off. */
+    public void setEffectsEnabled(boolean enabled) {
+        effectsEnabled = enabled;
+    }
+
     public void startMusic() {
-        if (backgroundMusic != null) {
+        if (backgroundMusic != null && musicEnabled) {
             backgroundMusic.setFramePosition(0);
             backgroundMusic.loop(Clip.LOOP_CONTINUOUSLY);
         }
@@ -148,7 +163,7 @@ public final class SoundManager {
 
     /** Continues the music from where {@link #stopMusic()} left it. */
     public void resumeMusic() {
-        if (backgroundMusic != null) {
+        if (backgroundMusic != null && musicEnabled) {
             backgroundMusic.loop(Clip.LOOP_CONTINUOUSLY);
         }
     }

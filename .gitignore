@@ -13,3 +13,6 @@ out/
 Thumbs.db
 .DS_Store
 /App.class
+
+# Saved by the game
+settings.properties
