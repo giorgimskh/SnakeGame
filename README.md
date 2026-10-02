@@ -5,7 +5,8 @@ browser through [CheerpJ](https://cheerpj.com/).
 
 ## Controls
 
-In the menu, click a level card, or use Up/Down to move between cards and Enter or Space to pick one.
+In the menu and on the settings screen, click, or use Up/Down to move and Enter or Space to pick.
+Esc on the settings screen goes back to the menu.
 
 | Key | Action |
 | --- | --- |
@@ -18,7 +19,7 @@ When a game ends, a dialog offers **Next Level** (after a win), **Retry** or **M
 ## Rules
 
 - The edges of the board wrap around: leave on one side and you come back on the other.
-- You die if you run into your own body, a visible bomb, or the AI snake's body.
+- You die if you run into your own body, a visible bomb, or any part of the AI snake (head-on included).
 - A red apple is worth 10 points. A green **2x** apple gives no points itself, but doubles
   every apple's points for 10 seconds.
 - You need **300 points** to complete a level.
@@ -31,9 +32,15 @@ When a game ends, a dialog offers **Next Level** (after a win), **Retry** or **M
 | 2 | Grass | Faster snake. The level is won as soon as you reach 300 points. |
 | 3 | Ocean | The apple vanishes after 4 seconds and reappears elsewhere a second later. |
 | 4 | Forest | Even faster, and a bomb appears and moves around the board. |
-| 5 | Space | An AI snake competes for the apples. Make it crash into you (+50), a bomb (+30) or itself (+30) for bonus points. A head-on collision counts as the AI's crash. |
+| 5 | Space | An AI snake competes for the apples. It can't be killed and keeps away from you, but running into it ends your game. |
 
 The high score is kept while the game is open and starts at 0 on every launch.
+
+## Settings
+
+The Settings button on the main menu turns the music and the sound effects on or off, picks your
+snake's color (green, blue, orange or purple), and lists the controls. Settings are saved to
+`settings.properties` in the folder the game runs from, and loaded the next time it starts.
 
 ## How to run
 
