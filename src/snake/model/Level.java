@@ -1,9 +1,8 @@
 package snake.model;
 
 /**
- * Every level and its rules. To add or change a level, edit this enum, then add its
- * background in {@code ThemePainter}, its menu card in {@code MainMenuPanel.card} and its card
- * scene in {@code BiomeScenes}.
+ * Every level and its rules. To add or change a level, edit this enum, then add its look (menu
+ * card, board tiles and decorations) in {@code ui.LevelTheme}.
  */
 public enum Level {
     //        n  theme     delay  limit    vanish bomb   ai
