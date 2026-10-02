@@ -79,9 +79,8 @@ public final class GameState {
 
     /** Moves the player one step and applies every rule. */
     public TickResult tick(long now) {
-        TickResult levelResult = checkLevelConditions(now);
-        if (levelResult != TickResult.CONTINUE) {
-            return levelResult;
+        if (level.hasTimeLimit() && now - startTime >= level.timeLimitMs()) {
+            return score >= Level.WIN_SCORE ? TickResult.LEVEL_COMPLETE : TickResult.LEVEL_FAILED;
         }
 
         player.addHead(Board.stepWrapped(player.head(), player.direction()));
@@ -91,22 +90,19 @@ public final class GameState {
         if (player.hitsItself()) {
             return TickResult.PLAYER_DIED;
         }
-
         if (bombVisible && player.head().equals(bomb)) {
             return TickResult.PLAYER_DIED;
         }
 
-        return checkAiCollision();
-    }
-
-    private TickResult checkLevelConditions(long now) {
-        if (level.hasTimeLimit()) {
-            if (now - startTime >= level.timeLimitMs()) {
-                return score >= Level.WIN_SCORE ? TickResult.LEVEL_COMPLETE : TickResult.LEVEL_FAILED;
-            }
-            return TickResult.CONTINUE;
+        TickResult result = checkAiCollision();
+        if (result != TickResult.CONTINUE) {
+            return result;
         }
-        return score >= Level.WIN_SCORE ? TickResult.LEVEL_COMPLETE : TickResult.CONTINUE;
+        // Untimed levels are won on the step that reaches the target score
+        if (!level.hasTimeLimit() && score >= Level.WIN_SCORE) {
+            return TickResult.LEVEL_COMPLETE;
+        }
+        return TickResult.CONTINUE;
     }
 
     private boolean eatFood(long now) {
