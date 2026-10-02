@@ -6,7 +6,7 @@ if not exist bin mkdir bin
 
 REM Compile sources
 echo Compiling sources...
-javac -d bin -cp src src\*.java
+javac -d bin -sourcepath src src\App.java
 if errorlevel 1 (
   echo Compilation failed.
   exit /b 1

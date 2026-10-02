@@ -3,7 +3,7 @@ set -euo pipefail
 
 mkdir -p bin
 echo "Compiling sources..."
-javac -d bin -cp src src/*.java
+javac -d bin -sourcepath src src/App.java
 
 rm -rf dist
 mkdir -p dist

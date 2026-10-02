@@ -1,10 +1,9 @@
 import javax.swing.SwingUtilities;
 
+import snake.ui.GameWindow;
+
 public class App {
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            SnakeGame game = new SnakeGame();
-            game.setVisible(true);
-        });
+        SwingUtilities.invokeLater(() -> new GameWindow().setVisible(true));
     }
 }
