@@ -40,4 +40,12 @@ final class TimerSet {
             }
         }
     }
+
+    /** Stops every pending timer, including one-shot respawn timers. */
+    void stopAll() {
+        for (Timer timer : timers) {
+            timer.stop();
+        }
+        timers.clear();
+    }
 }

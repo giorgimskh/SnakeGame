@@ -41,7 +41,6 @@ public final class GameController {
     private boolean running;
     private int highScore;
 
-    private Timer loopTimer;
     private Timer appleTimer;
     private Timer bombTimer;
     private Timer aiTimer;
@@ -55,15 +54,14 @@ public final class GameController {
     }
 
     public void start(Level level) {
-        timers.stop(multiplierTimer);
+        timers.stopAll();
         state = new GameState(level, random, System.currentTimeMillis(), events);
         state.spawnFood();
         running = true;
 
         sounds.startMusic();
 
-        timers.stop(loopTimer);
-        loopTimer = timers.repeat(level.tickDelayMs(), this::tick);
+        timers.repeat(level.tickDelayMs(), this::tick);
 
         if (level.hasVanishingApple()) {
             startAppleCycle();
@@ -72,7 +70,6 @@ public final class GameController {
             startBombCycle();
         }
         if (level.hasAiSnake()) {
-            timers.stop(aiTimer);
             aiTimer = timers.repeat(AI_MOVE_DELAY_MS, this::aiTick);
         }
 
@@ -82,7 +79,7 @@ public final class GameController {
     /** Stops the current game without a result, e.g. when the player returns to the menu. */
     public void stop() {
         running = false;
-        timers.stop(loopTimer, appleTimer, aiTimer);
+        timers.stopAll();
         sounds.stopMusic();
     }
 
@@ -125,7 +122,7 @@ public final class GameController {
 
     private void end(TickResult result) {
         running = false;
-        timers.stop(loopTimer, appleTimer, bombTimer, aiTimer, multiplierTimer);
+        timers.stopAll();
 
         // A failed timed level does not count towards the high score
         if (result != TickResult.LEVEL_FAILED && state.getScore() > highScore) {
