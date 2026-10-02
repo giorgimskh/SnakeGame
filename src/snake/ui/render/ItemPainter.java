@@ -100,8 +100,9 @@ public final class ItemPainter {
         int tipY = fuseY - tipSize / 2;
         g.fillOval(tipX, tipY, tipSize, tipSize);
 
-        g.setColor(Color.WHITE);
-        g.setFont(new Font("Arial", Font.BOLD, 10));
-        g.drawString("BOOM!", bodyX + bodySize / 4, bodyY + bodySize / 2 + 4);
+        // Highlight
+        g.setColor(new Color(255, 255, 255, 140));
+        int highlightSize = Math.max(3, bodySize / 4);
+        g.fillOval(bodyX + bodySize / 4, bodyY + bodySize / 4, highlightSize, highlightSize);
     }
 }

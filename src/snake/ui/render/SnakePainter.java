@@ -1,6 +1,7 @@
 package snake.ui.render;
 
 import java.awt.*;
+import java.awt.geom.Ellipse2D;
 import java.util.List;
 
 import snake.model.Direction;
@@ -15,10 +16,11 @@ public final class SnakePainter {
 
     public static void paintPlayer(Graphics g, Snake snake) {
         List<Point> segments = snake.segments();
-        drawHead(g, segments.get(0), snake.direction());
-        for (int i = 1; i < segments.size(); i++) {
+        // Tail first and head last, so the head is never covered
+        for (int i = segments.size() - 1; i > 0; i--) {
             drawBodySegment(g, segments.get(i));
         }
+        drawHead(g, segments.get(0), snake.direction());
     }
 
     /** A green circle with eyes that face the direction of travel. */
@@ -75,36 +77,39 @@ public final class SnakePainter {
         g2d.dispose();
     }
 
-    /** A blue circle with a green stripe. Body and tail segments look the same. */
+    /** A blue circle with a green stripe, centered in its cell. Body and tail segments look the same. */
     private static void drawBodySegment(Graphics g, Point body) {
-        int overlap = UNIT / 4;
-        int circleSize = UNIT - 4;
+        int inset = 1;
+        int size = UNIT - inset * 2;
+        int x = body.x + inset;
+        int y = body.y + inset;
 
         Graphics2D g2d = (Graphics2D) g.create();
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         GradientPaint bodyGradient = new GradientPaint(
-            body.x - overlap, body.y - overlap, new Color(30, 144, 255), // Dodger blue
-            body.x + circleSize, body.y + circleSize, new Color(25, 25, 112) // Midnight blue
+            x, y, new Color(30, 144, 255), // Dodger blue
+            x + size, y + size, new Color(25, 25, 112) // Midnight blue
         );
         g2d.setPaint(bodyGradient);
-        g2d.fillOval(body.x - overlap, body.y - overlap, circleSize + overlap, circleSize + overlap);
+        g2d.fillOval(x, y, size, size);
 
-        int lineHeight = Math.max(6, (circleSize + overlap) / 4);
-        int lineX = body.x - overlap;
-        int lineY = body.y - overlap + (circleSize + overlap) / 2 - lineHeight / 2;
-        int lineWidth = circleSize + overlap;
-
+        // Stripe across the middle, clipped to the circle
+        Shape oldClip = g2d.getClip();
+        g2d.clip(new Ellipse2D.Float(x, y, size, size));
+        int lineHeight = Math.max(4, size / 4);
+        int lineY = y + size / 2 - lineHeight / 2;
         GradientPaint accentGradient = new GradientPaint(
-            lineX, lineY, new Color(0, 255, 127), // Spring green
-            lineX + lineWidth, lineY + lineHeight, new Color(0, 200, 100) // Darker green
+            x, lineY, new Color(0, 255, 127), // Spring green
+            x + size, lineY + lineHeight, new Color(0, 200, 100) // Darker green
         );
         g2d.setPaint(accentGradient);
-        g2d.fillRect(lineX, lineY, lineWidth, lineHeight);
+        g2d.fillRect(x, lineY, size, lineHeight);
+        g2d.setClip(oldClip);
 
         g2d.setColor(new Color(25, 25, 112)); // Midnight blue
         g2d.setStroke(new BasicStroke(2));
-        g2d.drawOval(body.x - overlap, body.y - overlap, circleSize + overlap, circleSize + overlap);
+        g2d.drawOval(x + 1, y + 1, size - 2, size - 2);
 
         g2d.dispose();
     }
@@ -114,7 +119,7 @@ public final class SnakePainter {
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         List<Point> segments = ai.segments();
-        for (int i = 0; i < segments.size(); i++) {
+        for (int i = segments.size() - 1; i >= 0; i--) { // Head last
             Point segment = segments.get(i);
 
             if (i == 0) {
