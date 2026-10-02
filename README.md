@@ -5,6 +5,8 @@ browser through [CheerpJ](https://cheerpj.com/).
 
 ## Controls
 
+In the menu, click a level card, or use Up/Down to move between cards and Enter or Space to pick one.
+
 | Key | Action |
 | --- | --- |
 | Arrow keys or W A S D | Steer the snake |
@@ -49,7 +51,7 @@ run.bat
 bash run.sh
 ```
 
-The script compiles `src/` to `bin/`, copies `src/sounds/` to `bin/sounds/`, and launches the game.
+The script compiles `src/` to `bin/`, copies `src/sounds/` and `src/fonts/` to `bin/`, and launches the game.
 
 ### Runnable JAR
 
@@ -69,3 +71,10 @@ on GitHub Pages, run the jar build, commit `docs/SnakeGame.jar`, and serve the `
 
 `src/sounds/background.wav` is the background music. Sound effects are generated in code. To use
 your own, add `eat.wav`, `multiplier.wav`, `gameover.wav` or `levelcomplete.wav` to `src/sounds/`.
+Sounds are loaded from the classpath. If Java can't find an audio output, the console says
+"Sound disabled" once and the game runs silently.
+
+## Credits
+
+The menu uses the [Fredoka](https://fonts.google.com/specimen/Fredoka) font by The Fredoka Project
+Authors, licensed under the SIL Open Font License 1.1 (`src/fonts/OFL.txt`).
