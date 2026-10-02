@@ -83,7 +83,7 @@ public final class GameState {
             return score >= Level.WIN_SCORE ? TickResult.LEVEL_COMPLETE : TickResult.LEVEL_FAILED;
         }
 
-        player.addHead(Board.stepWrapped(player.head(), player.direction()));
+        player.addHead(Board.stepWrapped(player.head(), player.takeTurn()));
         if (!eatFood(now)) {
             player.removeTail();
         }
