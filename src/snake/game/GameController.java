@@ -2,6 +2,7 @@ package snake.game;
 
 import java.util.Random;
 
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 import snake.ai.AiSnakeController;
@@ -125,7 +126,9 @@ public final class GameController {
             highScore = state.getScore();
             highScores.save(highScore);
         }
-        listener.onGameEnded(result);
+        // Let the timer callback that ended the game return before the listener opens its modal
+        // dialog. Otherwise every replay runs inside the previous game's dialog loop and they nest.
+        SwingUtilities.invokeLater(() -> listener.onGameEnded(result));
     }
 
     /** Hides the apple after a while, then respawns it elsewhere, which starts the cycle again. */
