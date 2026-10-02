@@ -9,9 +9,11 @@ import java.util.List;
 public final class Snake {
     private final List<Point> body = new ArrayList<>();
     private Direction direction;
+    private Direction lastMoved; // direction of the most recent step
 
     public Snake(Direction direction, Point... segments) {
         this.direction = direction;
+        this.lastMoved = direction;
         Collections.addAll(body, segments);
     }
 
@@ -40,15 +42,20 @@ public final class Snake {
         this.direction = direction;
     }
 
-    /** Turns towards {@code d} unless that would reverse straight back into the body. */
+    /**
+     * Turns towards {@code d} unless that would reverse straight back into the body. Checked
+     * against the last step taken, so two quick turns between steps can't add up to a U-turn.
+     */
     public void turn(Direction d) {
-        if (d != direction.opposite()) {
+        if (d != lastMoved.opposite()) {
             direction = d;
         }
     }
 
+    /** Adds {@code p} as the new head, a step in the current direction. */
     public void addHead(Point p) {
         body.add(0, p);
+        lastMoved = direction;
     }
 
     public void removeTail() {
