@@ -33,7 +33,6 @@ if exist src\sounds (
 REM Copy for GitHub Pages (docs/)
 if not exist docs mkdir docs
 copy /Y dist\SnakeGame.jar docs\SnakeGame.jar >nul
-copy /Y docs\index.html docs\index.html >nul 2>nul
 
 echo Built dist\SnakeGame.jar and copied to docs\SnakeGame.jar
 
