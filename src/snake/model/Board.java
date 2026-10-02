@@ -30,7 +30,7 @@ public final class Board {
     }
 
     /** Moves {@code p} in place to the opposite edge if it has left the board. */
-    public static void wrap(Point p) {
+    private static void wrap(Point p) {
         if (p.x < 0) {
             p.x = WIDTH - UNIT;
         } else if (p.x >= WIDTH) {

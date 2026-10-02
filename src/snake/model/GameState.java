@@ -79,16 +79,13 @@ public final class GameState {
             return levelResult;
         }
 
-        player.addHead(Board.step(player.head(), player.direction()));
+        player.addHead(Board.stepWrapped(player.head(), player.direction()));
         if (!eatFood(now)) {
             player.removeTail();
         }
-
-        Board.wrap(player.head());
         if (player.hitsItself()) {
             return TickResult.PLAYER_DIED;
         }
-        eatFood(now);
 
         if (level.hasBomb() && bomb != null && bombVisible) {
             if (player.head().equals(bomb)) {
