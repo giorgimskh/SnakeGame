@@ -1,19 +1,51 @@
 package snake.ui;
 
 import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.util.EnumMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 
 import javax.swing.JPanel;
 
 import snake.game.GameController;
 import snake.model.Board;
 import snake.model.GameState;
+import snake.model.Level;
+import snake.model.Snake;
+import snake.ui.render.BoardBackground;
+import snake.ui.render.Decorations;
 import snake.ui.render.ItemPainter;
 import snake.ui.render.SnakePainter;
-import snake.ui.render.ThemePainter;
 
 /** The board. Paints the current game, or the one that just ended. */
 final class GamePanel extends JPanel {
+    /** Cells in front of a snake's start that decorations stay off. */
+    private static final int START_LOOKAHEAD = 3;
+
+    private static final GameState.Events NO_EVENTS = new GameState.Events() {
+        @Override
+        public void appleEaten() {
+        }
+
+        @Override
+        public void multiplierActivated() {
+        }
+
+        @Override
+        public void foodSpawned() {
+        }
+
+        @Override
+        public void aiKilled() {
+        }
+    };
+
     private final GameController controller;
+    // Each level's tiles and decorations, rendered once on first use
+    private final Map<Level, BufferedImage> backgrounds = new EnumMap<>(Level.class);
 
     GamePanel(GameController controller) {
         this.controller = controller;
@@ -42,8 +74,7 @@ final class GamePanel extends JPanel {
             return;
         }
 
-        ThemePainter.paintBackground(g2d, state.getLevel(), getWidth(), getHeight());
-        ThemePainter.paintVignette(g2d, getWidth(), getHeight());
+        g2d.drawImage(background(state.getLevel()), 0, 0, null);
 
         if (state.isFoodVisible()) {
             ItemPainter.paintFood(g2d, state.getFood(), state.getFoodType());
@@ -58,6 +89,40 @@ final class GamePanel extends JPanel {
 
         if (controller.isPaused()) {
             paintPausedOverlay(g2d);
+        }
+    }
+
+    private BufferedImage background(Level level) {
+        BufferedImage image = backgrounds.get(level);
+        if (image == null) {
+            LevelTheme theme = LevelTheme.of(level);
+            Decorations.CellPicker cells = new Decorations.CellPicker(LevelTheme.decorationSeed(level), startCells(level));
+            image = BoardBackground.create(theme.tileA, theme.tileB, theme.decorations, cells);
+            backgrounds.put(level, image);
+        }
+        return image;
+    }
+
+    /**
+     * The cells both snakes start on, plus a few in front of each head, taken from a fresh game so
+     * they always match the model. Decorations are kept off them.
+     */
+    static Set<Point> startCells(Level level) {
+        GameState fresh = new GameState(level, new Random(0), 0, NO_EVENTS);
+        Set<Point> cells = new HashSet<>();
+        addStart(cells, fresh.getPlayer());
+        if (fresh.getAi() != null) {
+            addStart(cells, fresh.getAi());
+        }
+        return cells;
+    }
+
+    private static void addStart(Set<Point> cells, Snake snake) {
+        cells.addAll(snake.segments());
+        Point p = snake.head();
+        for (int i = 0; i < START_LOOKAHEAD; i++) {
+            p = Board.stepWrapped(p, snake.direction());
+            cells.add(p);
         }
     }
 

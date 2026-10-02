@@ -96,31 +96,10 @@ final class MainMenuPanel extends JPanel {
         return component;
     }
 
-    /** Each level's look on the menu. To add a level, add its card here and its scene in {@link BiomeScenes}. */
     private static BiomeCard card(Level level) {
-        String title = level.number() + " · " + level.themeName();
-        switch (level) {
-            case LEVEL_1:
-                return new BiomeCard(title, "Time attack, 3 minutes",
-                        new Color(0xF3C77A), new Color(0xD9A24A), new Color(0x4A2E05), new Color(0x7A5212),
-                        BiomeScenes::desert);
-            case LEVEL_2:
-                return new BiomeCard(title, "Faster pace, first to 300 wins",
-                        new Color(0xB6DD8A), new Color(0x86B85A), new Color(0x1F3D0E), new Color(0x3D6421),
-                        BiomeScenes::grass);
-            case LEVEL_3:
-                return new BiomeCard(title, "Speed and vanishing food",
-                        new Color(0x9FD3EE), new Color(0x5EA9D4), new Color(0x0C3350), new Color(0x275A7C),
-                        BiomeScenes::ocean);
-            case LEVEL_4:
-                return new BiomeCard(title, "Speed, vanishing food, a bomb",
-                        new Color(0x8FC3A0), new Color(0x4F8F63), new Color(0x0F2E1A), new Color(0x2C5A3A),
-                        BiomeScenes::forest);
-            default:
-                return new BiomeCard(title, "Race an AI snake, dodge the bomb",
-                        new Color(0x3A3566), new Color(0x26224A), new Color(0xF2EEFF), new Color(0xC4BDF0),
-                        BiomeScenes::space);
-        }
+        LevelTheme theme = LevelTheme.of(level);
+        return new BiomeCard(LevelTheme.title(level), theme.subtitle, theme.cardFill, theme.cardBorder,
+                theme.cardTitle, theme.cardSubtitle, theme.cardScene);
     }
 
     private JPanel createBottomRow() {
