@@ -1,22 +1,28 @@
 package snake.audio;
 
-import java.io.File;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.net.URL;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
+import javax.sound.sampled.DataLine;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
 /**
- * Background music and sound effects. Only sounds/background.wav ships with the game. An effect
- * without a .wav file uses a short generated tone instead, and a clip that can't be created at
- * all is logged and stays silent.
+ * Background music and sound effects, loaded from the classpath ({@code /sounds/...}), which is
+ * how the jar, CheerpJ, IntelliJ and run.sh all provide them. Only background.wav ships with the
+ * game. An effect without a .wav file uses a short generated tone instead. If there is no audio
+ * output, that is logged once and the game stays silent.
  */
 public final class SoundManager {
     private static final float TONE_SAMPLE_RATE = 22050f;
+
+    private boolean audioAvailable = true; // false once no audio output could be opened
 
     private final Clip backgroundMusic;
     private final Clip eatingSound;
@@ -25,67 +31,78 @@ public final class SoundManager {
     private final Clip levelCompleteSound;
 
     public SoundManager() {
-        backgroundMusic = loadBackgroundMusic();
-        eatingSound = loadEffect("sounds/eat.wav", "Eating", 880, 70);
-        multiplierSound = loadEffect("sounds/multiplier.wav", "Multiplier", 1320, 160);
-        gameOverSound = loadEffect("sounds/gameover.wav", "Game over", 196, 450);
-        levelCompleteSound = loadEffect("sounds/levelcomplete.wav", "Level complete", 1047, 350);
+        backgroundMusic = loadMusic("sounds/background.wav");
+        eatingSound = loadEffect("sounds/eat.wav", 880, 70);
+        multiplierSound = loadEffect("sounds/multiplier.wav", 1320, 160);
+        gameOverSound = loadEffect("sounds/gameover.wav", 196, 450);
+        levelCompleteSound = loadEffect("sounds/levelcomplete.wav", 1047, 350);
     }
 
-    /**
-     * Loads from the classpath first, which works in the jar and CheerpJ. Falls back to
-     * ./, src/ and bin/ for local runs.
-     */
-    private AudioInputStream loadAudioFromResourcesOrFile(String relativePath) throws Exception {
-        try {
-            URL url = getClass().getClassLoader().getResource(relativePath);
-            if (url != null) {
-                return AudioSystem.getAudioInputStream(url);
-            }
-        } catch (Exception ignored) {
+    private Clip loadMusic(String path) {
+        AudioInputStream stream = openResource(path);
+        if (stream == null) {
+            System.out.println("Background music not found on the classpath: /" + path);
+            return null;
         }
-        File file = new File(relativePath);
-        if (!file.exists()) {
-            file = new File("src/" + relativePath);
-            if (!file.exists()) {
-                file = new File("bin/" + relativePath);
-            }
-        }
-        return AudioSystem.getAudioInputStream(file);
-    }
-
-    private Clip loadBackgroundMusic() {
-        try {
-            AudioInputStream audioIn = loadAudioFromResourcesOrFile("sounds/background.wav");
-            Clip clip = AudioSystem.getClip();
-            clip.open(audioIn);
-            clip.setFramePosition(0);
-            return clip;
-        } catch (UnsupportedAudioFileException e) {
-            System.out.println("Unsupported audio file: " + e.getMessage());
-        } catch (LineUnavailableException e) {
-            System.out.println("Audio line unavailable: " + e.getMessage());
-        } catch (Exception e) {
-            System.out.println("I/O error: " + e.getMessage());
-        }
-        return null;
+        return openClip(stream);
     }
 
     /** Loads {@code path}, or falls back to a tone of {@code frequencyHz} lasting {@code durationMs}. */
-    private Clip loadEffect(String path, String name, int frequencyHz, int durationMs) {
+    private Clip loadEffect(String path, int frequencyHz, int durationMs) {
+        AudioInputStream stream = openResource(path);
+        return openClip(stream != null ? stream : tone(frequencyHz, durationMs));
+    }
+
+    /** The classpath resource {@code path} as 16-bit PCM, or null if it is missing or unreadable. */
+    private static AudioInputStream openResource(String path) {
+        URL url = SoundManager.class.getResource("/" + path);
+        if (url == null) {
+            return null;
+        }
         try {
-            AudioInputStream audioIn = loadAudioFromResourcesOrFile(path);
-            Clip clip = AudioSystem.getClip();
-            clip.open(audioIn);
-            System.out.println(name + " sound loaded");
+            return toPcm16(AudioSystem.getAudioInputStream(new BufferedInputStream(url.openStream())));
+        } catch (UnsupportedAudioFileException | IOException | IllegalArgumentException e) {
+            System.out.println("Can't read /" + path + ": " + e.getMessage());
+            return null;
+        }
+    }
+
+    /** Converts {@code in} to signed 16-bit little-endian PCM, the format audio lines support most widely. */
+    private static AudioInputStream toPcm16(AudioInputStream in) {
+        AudioFormat source = in.getFormat();
+        if (source.getEncoding() == AudioFormat.Encoding.PCM_SIGNED
+                && source.getSampleSizeInBits() == 16 && !source.isBigEndian()) {
+            return in;
+        }
+        AudioFormat target = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, source.getSampleRate(), 16,
+                source.getChannels(), source.getChannels() * 2, source.getSampleRate(), false);
+        return AudioSystem.getAudioInputStream(target, in);
+    }
+
+    /** Opens a clip for exactly {@code stream}'s format, or returns null if there's no audio output. */
+    private Clip openClip(AudioInputStream stream) {
+        try (AudioInputStream in = stream) {
+            if (!audioAvailable) {
+                return null;
+            }
+            DataLine.Info info = new DataLine.Info(Clip.class, in.getFormat());
+            if (!AudioSystem.isLineSupported(info)) {
+                audioAvailable = false;
+                System.out.println("Sound disabled: no audio output device supports " + in.getFormat());
+                return null;
+            }
+            Clip clip = (Clip) AudioSystem.getLine(info);
+            clip.open(in);
             return clip;
-        } catch (Exception e) {
-            return tone(name, frequencyHz, durationMs);
+        } catch (LineUnavailableException | IOException | IllegalArgumentException e) {
+            audioAvailable = false;
+            System.out.println("Sound disabled: can't open the audio output (" + e.getMessage() + ")");
+            return null;
         }
     }
 
     /** A sine tone that fades out, so it ends without a click. 16-bit mono PCM. */
-    private static Clip tone(String name, int frequencyHz, int durationMs) {
+    private static AudioInputStream tone(int frequencyHz, int durationMs) {
         int samples = (int) (TONE_SAMPLE_RATE * durationMs / 1000);
         byte[] data = new byte[samples * 2];
         for (int i = 0; i < samples; i++) {
@@ -94,14 +111,8 @@ public final class SoundManager {
             data[i * 2] = (byte) value;
             data[i * 2 + 1] = (byte) (value >> 8);
         }
-        try {
-            Clip clip = AudioSystem.getClip();
-            clip.open(new AudioFormat(TONE_SAMPLE_RATE, 16, 1, true, false), data, 0, data.length);
-            return clip;
-        } catch (Exception e) {
-            System.out.println("Failed to create " + name.toLowerCase() + " sound: " + e.getMessage());
-            return null;
-        }
+        AudioFormat format = new AudioFormat(TONE_SAMPLE_RATE, 16, 1, true, false);
+        return new AudioInputStream(new ByteArrayInputStream(data), format, samples);
     }
 
     public void playEat() {
@@ -132,10 +143,6 @@ public final class SoundManager {
         if (backgroundMusic != null) {
             backgroundMusic.setFramePosition(0);
             backgroundMusic.loop(Clip.LOOP_CONTINUOUSLY);
-            backgroundMusic.start();
-            System.out.println("Background music started");
-        } else {
-            System.out.println("Background music Clip is null");
         }
     }
 
