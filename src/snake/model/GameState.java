@@ -92,13 +92,8 @@ public final class GameState {
             return TickResult.PLAYER_DIED;
         }
 
-        if (level.hasBomb() && bomb != null && bombVisible) {
-            if (player.head().equals(bomb)) {
-                return TickResult.PLAYER_DIED;
-            }
-            if (aiAlive && ai.head().equals(bomb)) {
-                killAi(AI_BOMB_REWARD);
-            }
+        if (bombVisible && player.head().equals(bomb)) {
+            return TickResult.PLAYER_DIED;
         }
 
         return checkAiCollision();
@@ -151,22 +146,31 @@ public final class GameState {
         return TickResult.CONTINUE;
     }
 
-    /** Moves the AI snake one step in {@code direction}. */
+    /**
+     * Moves the AI snake one step in {@code direction}. Its collisions are checked here, right
+     * after it moves, rather than waiting for the player's next step.
+     */
     public void moveAi(Direction direction) {
         ai.setDirection(direction);
         Point head = Board.stepWrapped(ai.head(), direction);
         ai.addHead(head);
 
-        if (ai.hitsItself()) {
-            killAi(AI_SELF_COLLISION_REWARD);
-            return;
-        }
-
+        // Grow or drop the tail before the self-collision check, so moving into the cell the
+        // tail is just leaving is allowed, as it is for the player
         if (head.equals(food) && foodVisible) {
             aiScore += AI_APPLE_POINTS;
             spawnFood();
         } else {
             ai.removeTail();
+        }
+
+        if (ai.hitsItself()) {
+            killAi(AI_SELF_COLLISION_REWARD);
+        } else if (player.contains(head)) {
+            // Includes running head-first into the player's head
+            killAi(AI_COLLISION_REWARD);
+        } else if (bombVisible && head.equals(bomb)) {
+            killAi(AI_BOMB_REWARD);
         }
     }
 
