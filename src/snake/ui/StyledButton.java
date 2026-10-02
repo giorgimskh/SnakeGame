@@ -22,6 +22,7 @@ final class StyledButton extends JButton {
         setBorderPainted(false);
         setContentAreaFilled(false);
         setFocusPainted(false);
+        setFocusable(false); // Mouse only, so a focused button never takes the game keys
         setOpaque(false);
 
         addMouseListener(new MouseAdapter() {

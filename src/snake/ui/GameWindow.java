@@ -44,8 +44,7 @@ public final class GameWindow extends JFrame implements GameController.Listener 
         pack();
         setLocationRelativeTo(null);
 
-        addKeyListener(new KeyboardInput(controller, this::showMainMenu));
-        setFocusable(true);
+        KeyboardInput.install(getRootPane(), controller, this::showMainMenu);
 
         showMainMenu();
     }

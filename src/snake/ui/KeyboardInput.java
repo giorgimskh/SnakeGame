@@ -1,42 +1,53 @@
 package snake.ui;
 
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
+import java.awt.event.ActionEvent;
+
+import javax.swing.AbstractAction;
+import javax.swing.ActionMap;
+import javax.swing.InputMap;
+import javax.swing.JComponent;
+import javax.swing.JRootPane;
+import javax.swing.KeyStroke;
 
 import snake.game.GameController;
 import snake.model.Direction;
 
-/** Arrow keys steer the snake and Esc returns to the menu. Keys only work while a game is running. */
-final class KeyboardInput extends KeyAdapter {
+/**
+ * Arrow keys steer the snake and Esc returns to the menu. Keys only work while a game is running.
+ * They are key bindings on the root pane, so they work whichever component in the window has focus.
+ */
+final class KeyboardInput {
     private final GameController controller;
-    private final Runnable onEscape;
+    private final InputMap inputs;
+    private final ActionMap actions;
 
-    KeyboardInput(GameController controller, Runnable onEscape) {
+    private KeyboardInput(JRootPane rootPane, GameController controller) {
         this.controller = controller;
-        this.onEscape = onEscape;
+        this.inputs = rootPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        this.actions = rootPane.getActionMap();
     }
 
-    @Override
-    public void keyPressed(KeyEvent e) {
-        if (!controller.isRunning()) {
-            return;
+    static void install(JRootPane rootPane, GameController controller, Runnable onEscape) {
+        KeyboardInput input = new KeyboardInput(rootPane, controller);
+        input.bind("turnUp", () -> controller.turn(Direction.UP), "UP");
+        input.bind("turnDown", () -> controller.turn(Direction.DOWN), "DOWN");
+        input.bind("turnLeft", () -> controller.turn(Direction.LEFT), "LEFT");
+        input.bind("turnRight", () -> controller.turn(Direction.RIGHT), "RIGHT");
+        input.bind("menu", onEscape, "ESCAPE");
+    }
+
+    /** Runs {@code action} when any of {@code keys} (in {@link KeyStroke#getKeyStroke(String)} form) is pressed. */
+    private void bind(String name, Runnable action, String... keys) {
+        for (String key : keys) {
+            inputs.put(KeyStroke.getKeyStroke(key), name);
         }
-        switch (e.getKeyCode()) {
-            case KeyEvent.VK_LEFT:
-                controller.turn(Direction.LEFT);
-                break;
-            case KeyEvent.VK_RIGHT:
-                controller.turn(Direction.RIGHT);
-                break;
-            case KeyEvent.VK_UP:
-                controller.turn(Direction.UP);
-                break;
-            case KeyEvent.VK_DOWN:
-                controller.turn(Direction.DOWN);
-                break;
-            case KeyEvent.VK_ESCAPE:
-                onEscape.run();
-                break;
-        }
+        actions.put(name, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (controller.isRunning()) {
+                    action.run();
+                }
+            }
+        });
     }
 }
